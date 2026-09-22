@@ -21,6 +21,12 @@ import {
   Wand2,
   Dices,
   ChevronDown,
+  Key,
+  ExternalLink,
+  AlertTriangle,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 interface Motif {
@@ -392,11 +398,19 @@ export default function PhotoFakerStudio() {
   const [copied, setCopied] = useState<boolean>(false);
   const [renderLatency, setRenderLatency] = useState<string>("3.2s");
   const [isDraggingSlider, setIsDraggingSlider] = useState<boolean>(false);
+  const [hfToken, setHfToken] = useState<string>("");
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState<boolean>(false);
+  const [tokenInput, setTokenInput] = useState<string>("");
+  const [showTokenText, setShowTokenText] = useState<boolean>(false);
+  const [renderError, setRenderError] = useState<{
+    message: string;
+    isZeroGpu: boolean;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const splitContainerRef = useRef<HTMLDivElement>(null);
 
-  // Kontingent aus LocalStorage laden
+  // Kontingent & Token aus LocalStorage laden
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("photo_faker_quota");
@@ -406,8 +420,31 @@ export default function PhotoFakerStudio() {
       } else {
         localStorage.setItem("photo_faker_quota", "10");
       }
+
+      const storedToken = localStorage.getItem("photo_faker_hf_token");
+      if (storedToken) {
+        setHfToken(storedToken);
+        setTokenInput(storedToken);
+      }
     }
   }, []);
+
+  const handleSaveToken = () => {
+    const trimmed = tokenInput.trim();
+    if (trimmed) {
+      localStorage.setItem("photo_faker_hf_token", trimmed);
+      setHfToken(trimmed);
+      setIsTokenModalOpen(false);
+      setRenderError(null);
+    }
+  };
+
+  const handleRemoveToken = () => {
+    localStorage.removeItem("photo_faker_hf_token");
+    setHfToken("");
+    setTokenInput("");
+    setIsTokenModalOpen(false);
+  };
 
   // Zufällige realistische Szene auswählen (optional nach Kategorie gefiltert)
   const handleRandomPrompt = (cat?: string) => {
@@ -471,6 +508,7 @@ export default function PhotoFakerStudio() {
       return nextVal;
     });
 
+    setRenderError(null);
     setIsRendering(true);
     try {
       const response = await fetch("/api/generate", {
@@ -485,6 +523,7 @@ export default function PhotoFakerStudio() {
           batchCount: batchSize,
           identityStrength: identityLock,
           aspectRatio: aspectRatio,
+          clientHfToken: hfToken,
         }),
       });
 
@@ -500,6 +539,7 @@ export default function PhotoFakerStudio() {
         setGeneratedImages(imgs);
         setActiveImageIndex(0);
         setSliderPosition(50);
+        setRenderError(null);
         if (data.latency) {
           setRenderLatency(data.latency);
         }
@@ -511,11 +551,17 @@ export default function PhotoFakerStudio() {
           colors: ["#8b5cf6", "#f59e0b", "#d0bcff", "#ec4899"],
         });
       } else {
-        alert("Generierung fehlgeschlagen: " + (data.error || "Unbekannter Fehler"));
+        setRenderError({
+          message: data.error || "Unbekannter Fehler bei der Generierung",
+          isZeroGpu: Boolean(data.isZeroGpuError),
+        });
       }
     } catch (err: any) {
       console.error(err);
-      alert("Netzwerkfehler beim Rendern: " + (err?.message || "Server nicht erreichbar"));
+      setRenderError({
+        message: "Netzwerkfehler beim Rendern: " + (err?.message || "Server nicht erreichbar"),
+        isZeroGpu: false,
+      });
     } finally {
       setIsRendering(false);
     }
@@ -657,6 +703,26 @@ export default function PhotoFakerStudio() {
               {freeGenerations} / 10
             </span>
           </div>
+
+          {/* HF Token Button */}
+          <button
+            onClick={() => {
+              setTokenInput(hfToken);
+              setIsTokenModalOpen(true);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition cursor-pointer shadow-sm ${
+              hfToken
+                ? "bg-emerald-950/60 text-emerald-300 border-emerald-700/50 hover:bg-emerald-900/60"
+                : "bg-[#1b1c24] text-zinc-300 border-[#2e303b] hover:text-white hover:border-violet-500/50"
+            }`}
+            title="Kostenlosen Hugging Face Token konfigurieren"
+          >
+            <Key className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">{hfToken ? "HF-Token:" : "HF-Token"}</span>
+            <span className={hfToken ? "text-emerald-400 font-bold" : "text-amber-400 font-semibold"}>
+              {hfToken ? "Aktiv" : "Hinzufügen"}
+            </span>
+          </button>
 
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -1027,6 +1093,51 @@ export default function PhotoFakerStudio() {
                 </div>
               )}
             </div>
+
+            {/* Error Banner with ZeroGPU Action */}
+            {renderError && (
+              <div className="mb-4 p-4 rounded-2xl bg-red-950/50 border border-red-700/60 text-red-200 text-xs shadow-xl animate-in fade-in duration-200">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-bold text-sm text-red-100 block">
+                        Generierung fehlgeschlagen
+                      </span>
+                      <p className="text-zinc-300 leading-relaxed">{renderError.message}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setRenderError(null)}
+                    className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-red-900/40 transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-red-900/50 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setTokenInput(hfToken);
+                      setIsTokenModalOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold transition flex items-center gap-1.5 shadow-md shadow-violet-600/30 cursor-pointer"
+                  >
+                    <Key className="w-3.5 h-3.5 text-amber-300" />
+                    <span>HF-Token eintragen (Kostenlos)</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRenderError(null);
+                      setIsModelDropdownOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#1b1c24] hover:bg-[#252733] text-zinc-200 border border-[#2e303b] transition cursor-pointer"
+                  >
+                    Anderes Modell wählen
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Viewfinder Header */}
             <div className="flex items-center justify-between mb-3 text-xs">
@@ -1430,6 +1541,108 @@ export default function PhotoFakerStudio() {
           © 2025 Photo Faker Studio. High-Fidelity Generative Portraiture.
         </div>
       </footer>
+
+      {/* Hugging Face Token Modal */}
+      {isTokenModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#16171d] border border-[#2d2e35] rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white">Hugging Face Token</h3>
+                  <p className="text-[11px] text-zinc-400">ZeroGPU Kontingent & Warteschlangen-Boost</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsTokenModalOpen(false)}
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-[#22232d] transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-violet-950/30 border border-violet-800/40 text-xs text-zinc-300 space-y-2">
+              <p className="leading-relaxed">
+                Hugging Face Spaces laufen auf kostenlosen <strong className="text-violet-300">ZeroGPUs</strong>. Ohne Token teilst du dir ein sehr kleines Kontingent mit allen anonymen Anfragen.
+              </p>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Mit deinem eigenen kostenlosen Token erhältst du ein persönliches ZeroGPU-Kontingent und vermeidest Quota-Sperren.
+              </p>
+            </div>
+
+            <div className="space-y-2 text-xs text-zinc-300 bg-[#0e0f13] p-3.5 rounded-2xl border border-[#22232d]">
+              <span className="font-semibold text-zinc-200 block text-[11px] uppercase tracking-wider">
+                In 30 Sekunden kostenlos erstellen:
+              </span>
+              <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-400">
+                <li>
+                  Auf{" "}
+                  <a
+                    href="https://huggingface.co/settings/tokens"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-violet-400 hover:underline inline-flex items-center gap-1 font-semibold"
+                  >
+                    huggingface.co/settings/tokens
+                    <ExternalLink className="w-3 h-3 inline" />
+                  </a>{" "}
+                  gehen.
+                </li>
+                <li>
+                  Klicke auf <strong>"Create new token"</strong> (Type: <strong>Read</strong>).
+                </li>
+                <li>Token kopieren (<code className="text-amber-300 bg-black/40 px-1 rounded">hf_...</code>) und unten einfügen:</li>
+              </ol>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-zinc-300">Dein Hugging Face Token</label>
+              <div className="relative">
+                <input
+                  type={showTokenText ? "text" : "password"}
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="hf_xxxxxxxxxxxxxxxxxxxx"
+                  className="w-full bg-[#0e0f13] border border-[#2d2e35] focus:border-violet-500 rounded-xl py-2.5 pl-3 pr-10 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowTokenText(!showTokenText)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
+                >
+                  {showTokenText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={handleSaveToken}
+                disabled={!tokenInput.trim()}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white font-semibold text-xs shadow-lg shadow-violet-600/30 transition cursor-pointer"
+              >
+                Token speichern & aktivieren
+              </button>
+              {hfToken && (
+                <button
+                  onClick={handleRemoveToken}
+                  className="py-2.5 px-3 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/40 text-xs transition cursor-pointer"
+                  title="Token entfernen"
+                >
+                  Entfernen
+                </button>
+              )}
+            </div>
+
+            <p className="text-[10px] text-zinc-500 text-center">
+              Wird sicher lokal in deinem Browser (localStorage) gespeichert und nie extern geteilt.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

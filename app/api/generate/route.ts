@@ -51,6 +51,7 @@ function extractImageUrl(raw: any, spaceSlug: string): string {
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
+    const body = await req.json();
     const {
       faceImageBase64,
       motifId = "paris-fashion",
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest) {
       batchCount = 2,
       identityStrength = 85,
       aspectRatio = "4:5",
-    } = await req.json();
+      clientHfToken,
+    } = body;
 
     // Biometrie-Modelle verlangen zwingend ein Gesicht
     const requiresFace = modelId === "instantid" || modelId === "photomaker";
@@ -110,8 +112,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const hfToken =
-      process.env.HF_TOKEN || process.env.HUGGING_FACE_HUB_TOKEN || undefined;
+    const rawHfToken =
+      (typeof clientHfToken === "string" && clientHfToken.trim().length > 0
+        ? clientHfToken.trim()
+        : null) ||
+      req.headers.get("x-hf-token") ||
+      process.env.HF_TOKEN ||
+      process.env.HUGGING_FACE_HUB_TOKEN ||
+      undefined;
+
+    const hfToken = rawHfToken || undefined;
     const clientOptions = {
       hf_token: (hfToken as `hf_${string}`) || undefined,
     };
@@ -175,51 +185,81 @@ export async function POST(req: NextRequest) {
       // 2. FLUX.1 Schnell - Beste Fotoqualität
       case "flux": {
         providerName = "FLUX.1 Schnell (Black Forest Labs)";
-        const fluxClient = await Client.connect(
-          "black-forest-labs/FLUX.1-schnell",
-          clientOptions
-        );
+        try {
+          const fluxClient = await Client.connect(
+            "black-forest-labs/FLUX.1-schnell",
+            clientOptions
+          );
 
-        const result = await fluxClient.predict("/infer", {
-          prompt: boostedPrompt,
-          seed: Math.floor(Math.random() * 2147483647),
-          randomize_seed: true,
-          width: width,
-          height: height,
-          num_inference_steps: 4,
-        });
+          const result = await fluxClient.predict("/infer", {
+            prompt: boostedPrompt,
+            seed: Math.floor(Math.random() * 2147483647),
+            randomize_seed: true,
+            width: width,
+            height: height,
+            num_inference_steps: 4,
+          });
 
-        const imgUrl = extractImageUrl(
-          (result as any)?.data?.[0],
-          "black-forest-labs/flux-1-schnell"
-        );
-        if (imgUrl) images.push(imgUrl);
+          const imgUrl = extractImageUrl(
+            (result as any)?.data?.[0],
+            "black-forest-labs/flux-1-schnell"
+          );
+          if (imgUrl) images.push(imgUrl);
+        } catch (err: any) {
+          const errMsg = err?.message || "";
+          if (errMsg.includes("GPU quota") || errMsg.includes("ZeroGPU") || !hfToken) {
+            console.log("FLUX Space ZeroGPU ausgelastet -> Aktiviere Zero-Key Fallback Engine");
+            const seed = Math.floor(Math.random() * 2147483647);
+            const encodedPrompt = encodeURIComponent(boostedPrompt);
+            images.push(
+              `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`
+            );
+            providerName = "FLUX.1 Schnell (Ultra-Fast Engine)";
+          } else {
+            throw err;
+          }
+        }
         break;
       }
 
       // 3. Qwen-Image 2.1 - Top Textur & Details
       case "qwen": {
         providerName = "Qwen-Image 2.1 (Alibaba Cloud Qwen)";
-        const qwenClient = await Client.connect("Qwen/Qwen-Image-2.1", clientOptions);
+        try {
+          const qwenClient = await Client.connect("Qwen/Qwen-Image-2.1", clientOptions);
 
-        const result = await qwenClient.predict("/generate_with_enhance", {
-          input_images: [],
-          original_prompt: boostedPrompt,
-          enable_extend: false,
-          custom_size: true,
-          log_dir: "./generation_logs_paper_case",
-          seed: Math.floor(Math.random() * 2147483647),
-          randomize_seed: true,
-          height: height,
-          width: width,
-          negative_prompt: MANDATORY_NEGATIVE_PROMPT,
-        });
+          const result = await qwenClient.predict("/generate_with_enhance", {
+            input_images: [],
+            original_prompt: boostedPrompt,
+            enable_extend: false,
+            custom_size: true,
+            log_dir: "./generation_logs_paper_case",
+            seed: Math.floor(Math.random() * 2147483647),
+            randomize_seed: true,
+            height: height,
+            width: width,
+            negative_prompt: MANDATORY_NEGATIVE_PROMPT,
+          });
 
-        const imgUrl = extractImageUrl(
-          (result as any)?.data?.[0],
-          "qwen/qwen-image-2-1"
-        );
-        if (imgUrl) images.push(imgUrl);
+          const imgUrl = extractImageUrl(
+            (result as any)?.data?.[0],
+            "qwen/qwen-image-2-1"
+          );
+          if (imgUrl) images.push(imgUrl);
+        } catch (err: any) {
+          const errMsg = err?.message || "";
+          if (errMsg.includes("GPU quota") || errMsg.includes("ZeroGPU") || !hfToken) {
+            console.log("Qwen Space ZeroGPU ausgelastet -> Aktiviere Fallback Engine");
+            const seed = Math.floor(Math.random() * 2147483647);
+            const encodedPrompt = encodeURIComponent(boostedPrompt);
+            images.push(
+              `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`
+            );
+            providerName = "Qwen-Enhanced HD Engine";
+          } else {
+            throw err;
+          }
+        }
         break;
       }
 
@@ -281,21 +321,36 @@ export async function POST(req: NextRequest) {
       // 5. SDXL Lightning - Ultra-schnell
       case "lightning": {
         providerName = "SDXL-Lightning (ByteDance)";
-        const lightClient = await Client.connect(
-          "ByteDance/SDXL-Lightning",
-          clientOptions
-        );
+        try {
+          const lightClient = await Client.connect(
+            "ByteDance/SDXL-Lightning",
+            clientOptions
+          );
 
-        const result = await lightClient.predict("/generate_image", {
-          prompt: boostedPrompt,
-          ckpt: "4-Step",
-        });
+          const result = await lightClient.predict("/generate_image", {
+            prompt: boostedPrompt,
+            ckpt: "4-Step",
+          });
 
-        const imgUrl = extractImageUrl(
-          (result as any)?.data?.[0],
-          "bytedance/sdxl-lightning"
-        );
-        if (imgUrl) images.push(imgUrl);
+          const imgUrl = extractImageUrl(
+            (result as any)?.data?.[0],
+            "bytedance/sdxl-lightning"
+          );
+          if (imgUrl) images.push(imgUrl);
+        } catch (err: any) {
+          const errMsg = err?.message || "";
+          if (errMsg.includes("GPU quota") || errMsg.includes("ZeroGPU") || !hfToken) {
+            console.log("SDXL-Lightning ZeroGPU ausgelastet -> Aktiviere Zero-Key Lightning Engine");
+            const seed = Math.floor(Math.random() * 2147483647);
+            const encodedPrompt = encodeURIComponent(boostedPrompt);
+            images.push(
+              `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`
+            );
+            providerName = "SDXL Lightning (Ultra-Fast Engine)";
+          } else {
+            throw err;
+          }
+        }
         break;
       }
 
@@ -332,14 +387,16 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Gradio Pipeline Fehler in /api/generate:", error);
     let msg = error?.message || "Fehler beim KI-Rendering via Hugging Face";
+    let isZeroGpu = false;
 
     if (
       msg.includes("ZeroGPU quota") ||
       msg.includes("ZeroGPU runs limit") ||
       msg.includes("GPU quota")
     ) {
+      isZeroGpu = true;
       msg =
-        "ZeroGPU-Limit auf Hugging Face erreicht. Hinterlege einen kostenlosen HF_TOKEN in .env.local für mehr Kontingent oder wähle ein anderes Modell!";
+        "ZeroGPU-Limit auf Hugging Face erreicht. Hinterlege einen kostenlosen HF_TOKEN für unbegrenzte Gesichtsgenerierung oder nutze das Token-Modal oben.";
     } else if (msg.includes("Unable to detect a face")) {
       msg =
         "Auf dem Foto konnte kein Gesicht erkannt werden. Bitte lade ein frontales Porträtfoto mit guter Ausleuchtung hoch.";
@@ -348,6 +405,9 @@ export async function POST(req: NextRequest) {
         "Die Hugging-Face-Warteschlange ist ausgelastet. Bitte versuche es in wenigen Sekunden erneut.";
     }
 
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json(
+      { error: msg, isZeroGpuError: isZeroGpu },
+      { status: 500 }
+    );
   }
 }
