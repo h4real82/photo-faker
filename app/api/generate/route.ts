@@ -7,9 +7,9 @@ interface MotifConfig {
   prompt: string;
 }
 
-// Zwingend vorgegebener negativer Prompt
+// Zwingend vorgegebener globaler negativer Prompt
 const MANDATORY_NEGATIVE_PROMPT =
-  "painting, drawing, cartoon, anime, illustration, 3d render, cgi, smooth skin, blur, bad quality";
+  "cartoon, 3d render, illustration, anime, CGI, airbrushed, plastic doll skin, waxy face, oversaturated, deformed hands, extra fingers, poorly drawn face, bad eyes, double chin, blurry, chromatic aberration, oversharpened, flat lighting, amateur selfie, bad composition, painting, drawing, bad quality";
 
 // Automatischer Photo-Prompt-Booster für Text-to-Image & Porträt-Generierung
 const PHOTO_PROMPT_BOOSTER =
@@ -73,10 +73,19 @@ export async function POST(req: NextRequest) {
     const motif = MOTIFS[motifId] || MOTIFS["paris-fashion"];
 
     // Basis-Prompt ermitteln: Freitext-Prompt (oder Zufallsszene) hat Vorrang vor Preset
-    const basePrompt =
+    let basePrompt =
       typeof userPrompt === "string" && userPrompt.trim().length > 0
         ? userPrompt.trim()
         : motif.prompt;
+
+    // Ersetze {face_reference} Trigger-Platzhalter dynamisch nach Modell
+    if (basePrompt.includes("{face_reference}")) {
+      if (modelId === "photomaker") {
+        basePrompt = basePrompt.replace(/\{face_reference\}/g, "a person img");
+      } else {
+        basePrompt = basePrompt.replace(/\{face_reference\}/g, "a person");
+      }
+    }
 
     // Automatischer Photo-Prompt-Booster für maximalen Fotorealismus
     const boostedPrompt = `${basePrompt}, ${PHOTO_PROMPT_BOOSTER}`;
@@ -225,7 +234,9 @@ export async function POST(req: NextRequest) {
         );
 
         // PhotoMaker benötigt den Trigger "img" im Prompt
-        const pmPrompt = `${basePrompt} img, ${PHOTO_PROMPT_BOOSTER}`;
+        const pmPrompt = basePrompt.includes("img")
+          ? `${basePrompt}, ${PHOTO_PROMPT_BOOSTER}`
+          : `${basePrompt} img, ${PHOTO_PROMPT_BOOSTER}`;
         const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 2);
 
         const aspectMap: Record<string, string> = {
