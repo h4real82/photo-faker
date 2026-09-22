@@ -1,0 +1,610 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "primary-fixed": "#e9ddff",
+        "on-secondary": "#472a00",
+        "surface-variant": "#343439",
+        "on-background": "#e3e2e8",
+        "surface": "#121317",
+        "on-tertiary-fixed": "#3e0022",
+        "on-surface-variant": "#cbc3d7",
+        "on-error": "#690005",
+        "primary-container": "#a078ff",
+        "inverse-on-surface": "#2f3035",
+        "surface-container-high": "#292a2e",
+        "on-tertiary-container": "#570032",
+        "on-secondary-fixed-variant": "#653e00",
+        "inverse-primary": "#6d3bd7",
+        "on-secondary-container": "#5b3800",
+        "error-container": "#93000a",
+        "secondary-fixed": "#ffddb8",
+        "secondary": "#ffb95f",
+        "surface-bright": "#38393e",
+        "on-surface": "#e3e2e8",
+        "tertiary-container": "#f751a1",
+        "background": "#121317",
+        "surface-dim": "#121317",
+        "surface-container-low": "#1a1b20",
+        "on-primary-container": "#340080",
+        "primary-fixed-dim": "#d0bcff",
+        "error": "#ffb4ab",
+        "surface-container": "#1f1f24",
+        "tertiary": "#ffb0cd",
+        "on-tertiary-fixed-variant": "#8c0053",
+        "surface-container-lowest": "#0d0e12",
+        "outline": "#958ea0",
+        "outline-variant": "#494454",
+        "primary": "#d0bcff",
+        "secondary-fixed-dim": "#ffb95f",
+        "on-error-container": "#ffdad6",
+        "secondary-container": "#ee9800",
+        "tertiary-fixed-dim": "#ffb0cd",
+        "on-secondary-fixed": "#2a1700",
+        "tertiary-fixed": "#ffd9e4",
+        "on-primary": "#3c0091",
+        "on-primary-fixed-variant": "#5516be",
+        "surface-container-highest": "#343439",
+        "inverse-surface": "#e3e2e8",
+        "on-primary-fixed": "#23005c",
+        "surface-tint": "#d0bcff",
+        "on-tertiary": "#640039"
+      },
+      "borderRadius": {
+        "DEFAULT": "1rem",
+        "lg": "2rem",
+        "xl": "3rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "gutter-sm": "0.5rem",
+        "gutter": "1rem",
+        "space-xxs": "0.125rem",
+        "margin-tablet": "2rem",
+        "space-lg": "1.5rem",
+        "margin": "1.25rem",
+        "space-md": "1rem",
+        "space-xl": "2rem",
+        "space-sm": "0.5rem",
+        "space-2xl": "3rem",
+        "space-xs": "0.25rem"
+      },
+      "fontFamily": {
+        "headline-md": [
+          "Plus Jakarta Sans"
+        ],
+        "headline-lg": [
+          "Plus Jakarta Sans"
+        ],
+        "body-lg": [
+          "Inter"
+        ],
+        "hud-metric": [
+          "Plus Jakarta Sans"
+        ],
+        "display-lg-mobile": [
+          "Plus Jakarta Sans"
+        ],
+        "label-md": [
+          "Inter"
+        ],
+        "label-lg": [
+          "Inter"
+        ],
+        "body-sm": [
+          "Inter"
+        ],
+        "body-md": [
+          "Inter"
+        ],
+        "label-caps": [
+          "Inter"
+        ],
+        "headline-sm": [
+          "Plus Jakarta Sans"
+        ],
+        "display-lg": [
+          "Plus Jakarta Sans"
+        ]
+      },
+      "fontSize": {
+        "headline-md": [
+          "22px",
+          {
+            "lineHeight": "28px",
+            "letterSpacing": "-0.01em",
+            "fontWeight": "600"
+          }
+        ],
+        "headline-lg": [
+          "28px",
+          {
+            "lineHeight": "36px",
+            "letterSpacing": "-0.02em",
+            "fontWeight": "600"
+          }
+        ],
+        "body-lg": [
+          "16px",
+          {
+            "lineHeight": "24px",
+            "letterSpacing": "-0.01em",
+            "fontWeight": "400"
+          }
+        ],
+        "hud-metric": [
+          "11px",
+          {
+            "lineHeight": "14px",
+            "letterSpacing": "0.08em",
+            "fontWeight": "700"
+          }
+        ],
+        "display-lg-mobile": [
+          "32px",
+          {
+            "lineHeight": "40px",
+            "letterSpacing": "-0.02em",
+            "fontWeight": "700"
+          }
+        ],
+        "label-md": [
+          "12px",
+          {
+            "lineHeight": "16px",
+            "letterSpacing": "0.03em",
+            "fontWeight": "500"
+          }
+        ],
+        "label-lg": [
+          "14px",
+          {
+            "lineHeight": "18px",
+            "letterSpacing": "0.02em",
+            "fontWeight": "600"
+          }
+        ],
+        "body-sm": [
+          "12px",
+          {
+            "lineHeight": "16px",
+            "letterSpacing": "0.01em",
+            "fontWeight": "400"
+          }
+        ],
+        "body-md": [
+          "14px",
+          {
+            "lineHeight": "20px",
+            "letterSpacing": "0em",
+            "fontWeight": "400"
+          }
+        ],
+        "label-caps": [
+          "10px",
+          {
+            "lineHeight": "12px",
+            "letterSpacing": "0.1em",
+            "fontWeight": "700"
+          }
+        ],
+        "headline-sm": [
+          "18px",
+          {
+            "lineHeight": "24px",
+            "letterSpacing": "0em",
+            "fontWeight": "600"
+          }
+        ],
+        "display-lg": [
+          "40px",
+          {
+            "lineHeight": "48px",
+            "letterSpacing": "-0.03em",
+            "fontWeight": "700"
+          }
+        ]
+      }
+    }
+  }
+};</script></head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/80 backdrop-blur-2xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md shrink-0"><div class="flex items-center gap-space-sm"><img alt="Photo Faker Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA11aZJM8Ix0enUA2Hj362X4X3AQTek6RVGmRTUWOiJiFdxZRfq7p3zgAyW305GG25-_kMR7tgcasKq1C4htbAvNOemfn7NtnLgbb2oD1B-GoChAbz65FG22ZE5W9ab7N2R3x6W2p4VuHbTQ3VDXQ2ubXgZxSGZsrU8A6ApRsvatQPlXKIB0pp7AwLAAtLJB7_4sOrtaahDi5ruidJU7iF4s9QqHVRPYcL8Vl--Yz7nst9tV_uQisUNXQ"><div class="flex flex-col"><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">PHOTO FAKER</span><span class="font-label-caps text-label-caps uppercase text-primary tracking-widest">FACE ENGINE PRO</span></div></div><div class="hidden xl:flex items-center gap-space-xs"><div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high/80 text-primary font-hud-metric text-hud-metric uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>Engine v4.2</div><div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high/80 text-on-surface-variant font-hud-metric text-hud-metric uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>Zero-Retention / GDPR Private</div><div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high/80 text-secondary font-hud-metric text-hud-metric uppercase tracking-wider"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>100% Free Tier Active</div></div></div><nav class="hidden lg:flex items-center gap-space-xs p-space-xxs rounded-full bg-surface-container-low/90 backdrop-blur-xl" data-active-classes="bg-primary-container text-on-primary-container font-semibold rounded-full"><a class="px-space-md py-space-xs rounded-full font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="studio-workbench" href="#">Studio &amp; Workbench</a><a class="px-space-md py-space-xs rounded-full font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="face-vault" href="#">Face Vault</a><a class="px-space-md py-space-xs rounded-full font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="shootings-styles" href="#">Shootings &amp; Styles</a><a class="px-space-md py-space-xs rounded-full font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="gallery-export" href="#">Gallery &amp; Export</a></nav><div class="flex items-center gap-space-md shrink-0"><div class="hidden sm:flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-surface-container-low text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-secondary-fixed shadow-[0_0_8px_rgba(255,185,95,0.6)]"></span><span class="font-hud-metric text-hud-metric uppercase tracking-wider text-on-surface">Cloud GPU:</span><span class="font-hud-metric text-hud-metric text-secondary font-bold">Online 3.2s</span></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="relative flex items-center justify-center p-space-xxs rounded-full bg-surface-container-high"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68"><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-secondary-container ring-2 ring-surface"></span></div></div></div></div></header><main class="w-full pt-20 min-h-screen bg-surface"><div class="flex flex-col w-full">
+<div class="w-full px-margin py-space-sm bg-surface-container-lowest flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-sm text-label-md font-label-md">
+<div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high text-on-surface">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed shadow-[0_0_8px_rgba(255,185,95,0.8)]"></span>
+<span class="text-on-surface-variant">Aktives Model:</span>
+<span class="font-headline-sm text-label-md font-semibold text-primary">Sarah K. (6/6 Kalibriert)</span>
+</div>
+<div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high text-on-surface">
+<span class="material-symbols-outlined text-tertiary-fixed text-[14px]">auto_awesome</span>
+<span class="text-on-surface-variant">Preset:</span>
+<span class="text-on-surface font-semibold">Paris Fashion Week (Haute Couture)</span>
+</div>
+<div class="hidden md:flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high text-on-surface">
+<span class="material-symbols-outlined text-primary text-[14px]">memory</span>
+<span class="text-on-surface-variant">Engine:</span>
+<span class="font-mono text-label-md text-on-surface">InstantID + Flux Pro v4</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs px-space-md py-space-xxs rounded-full bg-secondary-container/20 text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-hud-metric text-hud-metric tracking-wider uppercase font-bold">Kosten: 0,00 € (Unbegrenzt)</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface-variant text-label-md">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+<span class="hidden sm:inline font-label-md">Client-Side Secure</span>
+</div>
+</div>
+</div>
+<div class="w-full px-margin py-space-md">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+<aside class="lg:col-span-3 flex flex-col gap-space-md">
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-sm shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">face</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Face Vault</h2>
+</div>
+<span class="px-space-xs py-space-xxs rounded-full bg-primary/10 text-primary font-hud-metric text-hud-metric font-bold uppercase">Ready (6/6)</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Biometrische Vektoren lokal im Browser-Cache gesichert.</p>
+<div class="grid grid-cols-3 gap-space-xs my-space-xs">
+<div class="relative rounded-lg overflow-hidden bg-surface-container-high p-space-xxs group">
+<img alt="Biometrie Frontal" class="w-full h-16 object-cover rounded" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-x-0 bottom-0 bg-surface-container-lowest/80 py-space-xxs px-space-xxs text-center">
+<span class="block font-hud-metric text-hud-metric text-secondary font-bold">Frontal 100%</span>
+</div>
+</div>
+<div class="relative rounded-lg overflow-hidden bg-surface-container-high p-space-xxs group">
+<img alt="Biometrie 45 Grad Links" class="w-full h-16 object-cover rounded filter contrast-125 brightness-95" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-x-0 bottom-0 bg-surface-container-lowest/80 py-space-xxs px-space-xxs text-center">
+<span class="block font-hud-metric text-hud-metric text-on-surface font-medium">45° Profil L</span>
+</div>
+</div>
+<div class="relative rounded-lg overflow-hidden bg-surface-container-high p-space-xxs group">
+<img alt="Biometrie 45 Grad Rechts" class="w-full h-16 object-cover rounded filter brightness-110" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-x-0 bottom-0 bg-surface-container-lowest/80 py-space-xxs px-space-xxs text-center">
+<span class="block font-hud-metric text-hud-metric text-on-surface font-medium">45° Profil R</span>
+</div>
+</div>
+<div class="relative rounded-lg overflow-hidden bg-surface-container-high p-space-xxs group">
+<img alt="Biometrie Neigung" class="w-full h-16 object-cover rounded filter sepia-[0.2]" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-x-0 bottom-0 bg-surface-container-lowest/80 py-space-xxs px-space-xxs text-center">
+<span class="block font-hud-metric text-hud-metric text-on-surface font-medium">Neigung +12°</span>
+</div>
+</div>
+<div class="relative rounded-lg overflow-hidden bg-surface-container-high p-space-xxs group">
+<img alt="Biometrie Lächeln" class="w-full h-16 object-cover rounded" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-x-0 bottom-0 bg-surface-container-lowest/80 py-space-xxs px-space-xxs text-center">
+<span class="block font-hud-metric text-hud-metric text-on-surface font-medium">Lächeln 85%</span>
+</div>
+</div>
+<div class="relative rounded-lg overflow-hidden bg-surface-container-high p-space-xxs group">
+<img alt="Biometrie Neutral" class="w-full h-16 object-cover rounded filter saturate-150" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-x-0 bottom-0 bg-surface-container-lowest/80 py-space-xxs px-space-xxs text-center">
+<span class="block font-hud-metric text-hud-metric text-on-surface font-medium">Neutral / High-ISO</span>
+</div>
+</div>
+</div>
+<button class="w-full py-space-xs px-space-sm rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-lg text-label-lg flex items-center justify-center gap-space-xs transition-all">
+<span class="material-symbols-outlined text-[16px] text-primary">add_a_photo</span>
+<span class="">+ Neues Gesicht einlernen</span>
+</button>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">tune</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Styling &amp; Modifiers</h2>
+</div>
+<span class="font-hud-metric text-hud-metric text-outline uppercase">Neural Mix</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center text-label-md font-label-md">
+<span class="text-on-surface">Photorealismus-Tiefe</span>
+<span class="font-hud-metric text-hud-metric text-secondary font-bold">100% Identitätserhalt</span>
+</div>
+<input class="w-full accent-primary bg-surface-container-lowest rounded h-1 cursor-pointer" max="100" min="80" type="range" value="100">
+<div class="flex justify-between text-body-sm font-body-sm text-outline">
+<span class="">80% Vibe</span>
+<span class="">100% Absolute Identity Lock</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center text-label-md font-label-md">
+<span class="text-on-surface">Analog 35mm Grain</span>
+<span class="font-hud-metric text-hud-metric text-primary font-bold">Kodak Portra 400</span>
+</div>
+<input class="w-full accent-primary bg-surface-container-lowest rounded h-1 cursor-pointer" max="100" min="0" type="range" value="45">
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="flex justify-between items-center text-label-md font-label-md">
+<span class="text-on-surface">Hauttextur &amp; Poren</span>
+<span class="font-hud-metric text-hud-metric text-on-surface-variant font-bold">RAW Micro-Contrast</span>
+</div>
+<input class="w-full accent-primary bg-surface-container-lowest rounded h-1 cursor-pointer" max="100" min="0" type="range" value="70">
+</div>
+<div class="flex items-center justify-between py-space-xs px-space-sm rounded-lg bg-surface-container-high">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Make-up Look (Glow Glam)</span>
+<span class="font-body-sm text-body-sm text-outline">Subtile Highlighter-Akzente (80%)</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-lowest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-surface peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-primary-container after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+</label>
+</div>
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md text-on-surface">Haar-Styling Matrix</span>
+<div class="relative">
+<select class="w-full bg-surface-container-high text-on-surface font-label-md text-label-md py-space-xs px-space-sm rounded-lg appearance-none cursor-pointer focus:outline-none focus:bg-surface-container-highest">
+<option selected="">Wet Hair Look (Sleek Haute)</option>
+<option>Beach Waves (Natural Warm)</option>
+<option>Voluminous Studio Blowout</option>
+<option>Original Haarstruktur beibehalten</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+</div>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-sm shadow-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Batch &amp; Frame Specs</h3>
+<span class="font-hud-metric text-hud-metric text-primary uppercase">DPI: 300</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Seitenverhältnis</span>
+<div class="grid grid-cols-3 gap-space-xs">
+<button class="py-space-xs px-space-xs rounded bg-primary-container text-on-primary-container font-label-md text-label-md font-bold flex flex-col items-center">
+<span class="">4:5</span>
+<span class="font-hud-metric text-hud-metric uppercase opacity-80">Portrait</span>
+</button>
+<button class="py-space-xs px-space-xs rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex flex-col items-center">
+<span class="">9:16</span>
+<span class="font-hud-metric text-hud-metric uppercase opacity-80">Story</span>
+</button>
+<button class="py-space-xs px-space-xs rounded bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex flex-col items-center">
+<span class="">1:1</span>
+<span class="font-hud-metric text-hud-metric uppercase opacity-80">Square</span>
+</button>
+</div>
+</div>
+<div class="flex justify-between items-center pt-space-xs text-label-md font-label-md">
+<span class="text-on-surface-variant">Batch Size</span>
+<div class="flex items-center gap-space-xs">
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold text-center">2</button>
+<button class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container font-bold text-center">4</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-bold text-center">8</button>
+</div>
+</div>
+</div>
+</aside>
+<section class="lg:col-span-6 flex flex-col gap-space-md">
+<div class="relative rounded-xl overflow-hidden bg-surface-container-lowest shadow-2xl flex flex-col group select-none">
+<div class="relative w-full aspect-[4/5] bg-surface-container-lowest overflow-hidden flex items-center justify-center">
+<div class="absolute inset-0 z-0">
+<img alt="Rendered Paris Fashion High Fashion Montage" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-surface-container-lowest/40 pointer-events-none"></div>
+</div>
+<div class="absolute inset-y-0 left-0 overflow-hidden z-10 w-1/2" id="split-overlay">
+<img alt="Original Face Matrix Reference" class="absolute top-0 left-0 max-w-none h-full object-cover filter grayscale contrast-110" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<div class="absolute inset-0 bg-primary/10 mix-blend-color"></div>
+</div>
+<div class="absolute inset-y-0 left-1/2 -translate-x-1/2 z-20 w-1 bg-primary cursor-ew-resize flex items-center justify-center pointer-events-auto" id="split-handle">
+<div class="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-xl">
+<span class="material-symbols-outlined text-[20px]">code</span>
+</div>
+</div>
+<div class="absolute top-space-md left-space-md z-30 flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-lowest/80 backdrop-blur-xl text-secondary">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-hud-metric text-hud-metric uppercase tracking-wider font-bold">100% Original-Gesichtskonturen erhalten</span>
+</div>
+<div class="px-space-sm py-space-xxs rounded-full bg-surface-container-lowest/80 backdrop-blur-xl text-primary font-hud-metric text-hud-metric uppercase tracking-wider font-bold">
+                RAW PRO 4K RENDER
+              </div>
+</div>
+<div class="absolute top-space-md right-space-md z-30 flex items-center gap-space-xs">
+<span class="px-space-sm py-space-xxs rounded-full bg-surface-container-lowest/80 backdrop-blur-xl text-on-surface font-mono text-label-md">
+                f/1.4 • 85mm G-Master
+              </span>
+<button class="w-8 h-8 rounded-full bg-surface-container-lowest/80 backdrop-blur-xl text-on-surface hover:text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">fullscreen</span>
+</button>
+</div>
+<div class="absolute bottom-space-md inset-x-space-md z-30 flex justify-between items-end text-label-md font-label-md">
+<div class="px-space-sm py-space-xxs rounded-lg bg-surface-container-lowest/90 backdrop-blur-md text-on-surface-variant flex items-center gap-space-xs">
+<span class="font-bold text-on-surface">Links:</span> Biometrischer Input
+              </div>
+<div class="px-space-sm py-space-xxs rounded-lg bg-primary-container/90 backdrop-blur-md text-on-primary-container flex items-center gap-space-xs font-bold">
+<span class="material-symbols-outlined text-[16px]">magic_button</span> Rechts: Paris Haute Shoot
+              </div>
+</div>
+</div>
+<div class="w-full bg-surface-container p-space-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between text-label-md font-label-md">
+<span class="text-on-surface font-semibold">Generierte Batch-Variationen (Klick zum Wechseln)</span>
+<span class="text-outline font-hud-metric text-hud-metric uppercase">Cache: 4/4 Ready</span>
+</div>
+<div class="grid grid-cols-4 gap-space-xs">
+<div class="p-space-xxs rounded-lg bg-surface-container-high hover:bg-surface-container-highest cursor-pointer flex flex-col gap-space-xxs">
+<div class="aspect-square rounded overflow-hidden relative">
+<img alt="Paris Glow Variation" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+<span class="absolute top-1 left-1 px-1 rounded bg-primary text-on-primary font-hud-metric text-[9px] font-bold">Aktiv</span>
+</div>
+<span class="text-body-sm font-body-sm text-center text-on-surface font-medium truncate">Paris Glow</span>
+</div>
+<div class="p-space-xxs rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer flex flex-col gap-space-xxs opacity-75 hover:opacity-100 transition-all">
+<div class="aspect-square rounded overflow-hidden relative">
+<img alt="Nahaufnahme Studio Variation" class="w-full h-full object-cover filter brightness-110" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<span class="text-body-sm font-body-sm text-center text-on-surface-variant truncate">Studio Close</span>
+</div>
+<div class="p-space-xxs rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer flex flex-col gap-space-xxs opacity-75 hover:opacity-100 transition-all">
+<div class="aspect-square rounded overflow-hidden relative">
+<img alt="Ganzkoerper Haute Couture Variation" class="w-full h-full object-cover filter contrast-125" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<span class="text-body-sm font-body-sm text-center text-on-surface-variant truncate">Haute Trench</span>
+</div>
+<div class="p-space-xxs rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer flex flex-col gap-space-xxs opacity-75 hover:opacity-100 transition-all">
+<div class="aspect-square rounded overflow-hidden relative">
+<img alt="Noir Monochrome Variation" class="w-full h-full object-cover filter grayscale contrast-150" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<span class="text-body-sm font-body-sm text-center text-on-surface-variant truncate">Noir 35mm</span>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-space-md px-space-xl rounded-full bg-gradient-to-r from-primary-container via-inverse-primary to-primary text-on-primary-fixed font-headline-sm text-headline-sm font-bold flex items-center justify-center gap-space-sm shadow-[0_10px_30px_rgba(160,120,255,0.4)] hover:shadow-[0_15px_40px_rgba(160,120,255,0.6)] active:scale-[0.99] transition-all">
+<span class="material-symbols-outlined text-[24px] animate-spin text-on-primary-fixed">autorenew</span>
+<span class="">⚡ FOTOMONTAGE RENDERN (4 VARIATIONEN • 3.2s) — KOSTENLOS</span>
+</button>
+</section>
+<aside class="lg:col-span-3 flex flex-col gap-space-md">
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-sm shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">photo_library</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Shooting-Motifs</h2>
+</div>
+<span class="font-hud-metric text-hud-metric text-secondary font-bold uppercase">12 Motive</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<div class="p-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest cursor-pointer flex gap-space-sm items-center relative overflow-hidden">
+<div class="w-14 h-14 rounded-md overflow-hidden shrink-0">
+<img alt="Paris Fashion Week Preview" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Paris Fashion Week</span>
+<span class="w-2 h-2 rounded-full bg-secondary shrink-0"></span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Pont Alexandre III • Golden Hour</span>
+<div class="flex items-center gap-space-xs mt-space-xxs">
+<span class="px-space-xs py-space-xxs rounded bg-primary/20 text-primary font-hud-metric text-[9px] uppercase">Haute Trench</span>
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-lowest text-on-surface-variant font-hud-metric text-[9px] uppercase">35mm</span>
+</div>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer flex gap-space-sm items-center transition-all">
+<div class="w-14 h-14 rounded-md overflow-hidden shrink-0">
+<img alt="Neon Noir Motif Preview" class="w-full h-full object-cover filter hue-rotate-90" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">Neon Noir Cyber-Editorial</span>
+<span class="font-body-sm text-body-sm text-outline truncate">Tokyo Rain • Reflexionen</span>
+<div class="flex items-center gap-space-xs mt-space-xxs">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-lowest text-on-surface-variant font-hud-metric text-[9px] uppercase">High Gloss</span>
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-lowest text-on-surface-variant font-hud-metric text-[9px] uppercase">Cinema</span>
+</div>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer flex gap-space-sm items-center transition-all">
+<div class="w-14 h-14 rounded-md overflow-hidden shrink-0">
+<img alt="Monaco Riviera Motif Preview" class="w-full h-full object-cover filter contrast-75 brightness-125" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">Monaco Yacht Riviera</span>
+<span class="font-body-sm text-body-sm text-outline truncate">Old Money Luxury • Sunset Linen</span>
+<div class="flex items-center gap-space-xs mt-space-xxs">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-lowest text-on-surface-variant font-hud-metric text-[9px] uppercase">Sunny RAW</span>
+</div>
+</div>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container-high cursor-pointer flex gap-space-sm items-center transition-all">
+<div class="w-14 h-14 rounded-md overflow-hidden shrink-0">
+<img alt="Met Gala Velvet Motif Preview" class="w-full h-full object-cover filter saturate-200" src="https://lh3.googleusercontent.com/aida/AEtjO1XyARWqOd5w0H0NRZbxgzklBW5Z4ra1TSriEz3aZ5R2sIBlLNuF5rixkCMEjJ0oRx8kY7icyoQOiximb3itq_zAjmMD92EfPQbidp0-Z-EYXwcy-KNNfgIV1HP3_IxuvvTOs35Fz2lBejYXqw3z8D3NrwWAlQjvVwEzKjg5pWusxW-rknr7KLtb8IPnlIVIheIpG-TAypfF8if8LHRjriW9DpoFurJ_31tn9kOkPZ4XnIBl52p8E4fVw68">
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg font-semibold text-on-surface truncate">Met Gala Velvet &amp; Gems</span>
+<span class="font-body-sm text-body-sm text-outline truncate">Red Carpet Dramatic Flash</span>
+<div class="flex items-center gap-space-xs mt-space-xxs">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-lowest text-on-surface-variant font-hud-metric text-[9px] uppercase">Vogue Front</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-sm shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">download</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">Direct Web Export</h2>
+</div>
+<span class="font-hud-metric text-hud-metric text-secondary font-bold uppercase">No Watermark</span>
+</div>
+<button class="w-full py-space-sm px-space-md rounded-full bg-secondary-container text-on-secondary-container font-headline-sm text-label-lg font-bold flex items-center justify-center gap-space-xs shadow-lg hover:brightness-110 transition-all">
+<span class="material-symbols-outlined text-[20px]">cloud_download</span>
+<span class="">In Fotos sichern (1-Klick)</span>
+</button>
+<div class="flex flex-col gap-space-xs mt-space-xxs">
+<button class="w-full py-space-xs px-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[16px]">folder_zip</span>
+<span class="">Ultra-HD RAW Batch (.ZIP)</span>
+</div>
+<span class="font-hud-metric text-hud-metric text-outline">48.2 MB</span>
+</button>
+<button class="w-full py-space-xs px-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[16px]">ios_share</span>
+<span class="">Web Share (AirDrop, Insta)</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline">arrow_forward</span>
+</button>
+<button class="w-full py-space-xs px-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[16px]">content_copy</span>
+<span class="">In Zwischenablage kopieren</span>
+</div>
+<span class="font-hud-metric text-hud-metric text-secondary">Ready</span>
+</button>
+</div>
+<div class="mt-space-xs p-space-xs rounded-lg bg-surface-container-lowest flex items-center gap-space-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[16px] shrink-0">shield</span>
+<span class="font-label-caps text-label-caps leading-tight">Keine Server-Speicherung • Lokale RAM-Verarbeitung • 100% DSGVO-konform</span>
+</div>
+</div>
+</aside>
+</div>
+</div>
+<script>
+    (function initComparisonSlider() {
+      const container = document.querySelector('#split-handle')?.parentElement;
+      const overlay = document.getElementById('split-overlay');
+      const handle = document.getElementById('split-handle');
+      if (!container || !overlay || !handle) return;
+
+      let isDragging = false;
+
+      function updateSlider(clientX) {
+        const rect = container.getBoundingClientRect();
+        let offsetX = clientX - rect.left;
+        if (offsetX < 0) offsetX = 0;
+        if (offsetX > rect.width) offsetX = rect.width;
+        const percentage = (offsetX / rect.width) * 100;
+        overlay.style.width = percentage + '%';
+        handle.style.left = percentage + '%';
+      }
+
+      handle.addEventListener('mousedown', () => { isDragging = true; });
+      window.addEventListener('mouseup', () => { isDragging = false; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        updateSlider(e.clientX);
+      });
+
+      handle.addEventListener('touchstart', () => { isDragging = true; }, { passive: true });
+      window.addEventListener('touchend', () => { isDragging = false; });
+      window.addEventListener('touchmove', (e) => {
+        if (!isDragging || !e.touches[0]) return;
+        updateSlider(e.touches[0].clientX);
+      }, { passive: true });
+    })();
+  </script>
+</div></main><footer class="w-full bg-surface-container-lowest/90 mt-space-2xl"><div class="w-full px-margin py-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md"><div class="flex items-center gap-space-sm"><span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface">PHOTO FAKER</span><span class="font-label-caps text-label-caps uppercase text-outline tracking-widest">• Face Engine Pro Studio v4.2</span></div><div class="flex items-center gap-space-lg"><span class="font-label-md text-label-md text-on-surface-variant">Zero-Retention Privacy Verified</span><span class="font-label-md text-label-md text-on-surface-variant">Hardware-Accelerated Neural Pipeline</span></div><div class="font-body-sm text-body-sm text-outline">© 2025 Photo Faker Studio. High-Fidelity Generative Portraiture.</div></div></footer>
+
+</body></html>

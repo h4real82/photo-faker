@@ -1,0 +1,419 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "secondary-fixed": "#ffddb8", "on-secondary-container": "#5b3800", "surface-container-high": "#292a2e", "tertiary-fixed-dim": "#ffb0cd", "on-surface-variant": "#cbc3d7", "primary-fixed-dim": "#d0bcff", "on-secondary": "#472a00", "on-secondary-fixed": "#2a1700", "on-primary-container": "#340080", "surface-variant": "#343439", "on-tertiary-fixed-variant": "#8c0053", "surface": "#121317", "on-primary": "#3c0091", "on-tertiary": "#640039", "on-primary-fixed": "#23005c", "secondary-container": "#ee9800", "secondary-fixed-dim": "#ffb95f", "on-error-container": "#ffdad6", "error": "#ffb4ab", "surface-tint": "#d0bcff", "on-surface": "#e3e2e8", "on-error": "#690005", "outline": "#958ea0", "primary-container": "#a078ff", "secondary": "#ffb95f", "on-secondary-fixed-variant": "#653e00", "primary": "#d0bcff", "surface-bright": "#38393e", "tertiary-fixed": "#ffd9e4", "inverse-surface": "#e3e2e8", "primary-fixed": "#e9ddff", "surface-container": "#1f1f24", "surface-dim": "#121317", "surface-container-low": "#1a1b20", "inverse-primary": "#6d3bd7", "inverse-on-surface": "#2f3035", "tertiary-container": "#f751a1", "tertiary": "#ffb0cd", "error-container": "#93000a", "surface-container-lowest": "#0d0e12", "outline-variant": "#494454", "surface-container-highest": "#343439", "on-tertiary-container": "#570032", "on-primary-fixed-variant": "#5516be", "on-background": "#e3e2e8", "background": "#121317", "on-tertiary-fixed": "#3e0022" }, "borderRadius": { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" }, "spacing": { "space-xl": "2rem", "margin": "1.25rem", "gutter": "1rem", "space-2xl": "3rem", "space-xs": "0.25rem", "gutter-sm": "0.5rem", "margin-tablet": "2rem", "space-md": "1rem", "space-sm": "0.5rem", "space-lg": "1.5rem", "space-xxs": "0.125rem" }, "fontFamily": { "body-md": ["Inter"], "label-md": ["Inter"], "headline-md": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"], "label-lg": ["Inter"], "body-lg": ["Inter"], "hud-metric": ["Plus Jakarta Sans"], "label-caps": ["Inter"], "headline-sm": ["Plus Jakarta Sans"], "display-lg": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "headline-lg": ["Plus Jakarta Sans"] }, "fontSize": { "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.03em", "fontWeight": "500" }], "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "display-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "label-lg": ["14px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "hud-metric": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }], "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.1em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "600" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "headline-lg": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased selection:bg-primary selection:text-on-primary"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="GLAM Montage App Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUGlqye35Q4aW7f8mq8NPqDr4YkohlO2iyqP1FEPlgThW4nuh5-ybDsxhbpJrDgCVnzQQVAe2K6UnWmtE7INiEgiNq8uJiVBwSx1VSbAAO1a9LDCVUAoFoJLkkAldiSFrkaLmcUQxEAj5-GoUpIQfR_XZ03yNwkVBMTr9xIVR0-oVZanMha7HiJfEZoodoT1CnzYtfKZAMthVif-4oddfPYzkMw9PA9d2Li_6YWqKNHQJPm6qGfLxxJA"><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface uppercase tracking-wider">Photo Faker</span><div class="flex items-center gap-space-xxs"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span><span class="font-label-caps text-label-caps text-secondary uppercase">Face Engine Pro</span></div></div></div><div class="flex items-center gap-space-md"><span class="font-headline-sm text-headline-sm text-on-surface hidden">Motive</span><button aria-label="Profile" class="min-h-[44px] min-w-[44px] flex items-center justify-center p-space-xxs rounded-full hover:bg-surface-variant transition-colors"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU3vIUWpwawZ4OqkoYNvijqtfBUOd_KrwSXPLYy4o6MCwLB-IndZuuDBR1wZ6mG6tIIYr0nGMC1JugiLeQBP4lW6gEGdpMkRbmqGjcLDm-LZBHXJwx_ypH6ds81rxS6s1RLMQFTMFBXjOeRERRn-aJaylBMuUoa411ICglQWDfCy9e9nBd8c9cxT7W24ZZY2IjVvGlaDpopnaMwg-L4F0Q6nw_VriS5DKT_6dpvHXiyC5WjJBNrnx67Q"></button></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface"><div class="flex flex-col w-full">
+<!-- Interactive Viewfinder Telemetry Header -->
+<div class="px-margin pt-space-sm pb-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span class="font-hud-metric text-hud-metric uppercase text-secondary tracking-widest">PRO SHOOT CATALOGUE</span>
+</div>
+<div class="flex items-center gap-space-xs px-space-sm py-space-xxs rounded-full bg-surface-container-high text-on-surface-variant font-hud-metric text-hud-metric">
+<span class="material-symbols-outlined text-[14px] text-primary">verified</span>
+<span class="">100% IDENTITY LOCKED</span>
+</div>
+</div>
+<!-- Hero Curated Capsule Announcement -->
+<div class="px-margin mb-space-md">
+<div class="relative overflow-hidden rounded-DEFAULT bg-surface-container p-space-md shadow-lg">
+<div class="absolute -right-6 -bottom-6 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between gap-space-sm relative z-10">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-wider mb-space-xxs">Curated Series · Vol. 04</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Haute Couture &amp; Studio Sets</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xxs">Wähle deine Inszenierung. Face Engine passt Licht, Schattenwurf &amp; Skin-Ton anatomisch präzise an.</p>
+</div>
+<div class="flex-shrink-0 w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">camera</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter-Pills: Horizontal Snap Carousel -->
+<section aria-label="Kategorie Filter" class="mb-space-md">
+<div class="flex items-center gap-space-xs overflow-x-auto px-margin no-scrollbar py-space-xxs" id="filter-pills-row">
+<button class="category-pill active flex-shrink-0 px-space-md py-space-xs rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md transition-all shadow-sm flex items-center gap-space-xs" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="">Alle (24)</span>
+</button>
+<button class="category-pill flex-shrink-0 px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+        Vogue Editorial
+      </button>
+<button class="category-pill flex-shrink-0 px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+        Cyberpunk &amp; Ink
+      </button>
+<button class="category-pill flex-shrink-0 px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+        Old Money Glam
+      </button>
+<button class="category-pill flex-shrink-0 px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+        Retro 90s
+      </button>
+<button class="category-pill flex-shrink-0 px-space-md py-space-xs rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all" type="button">
+        Festival Boho
+      </button>
+</div>
+</section>
+<!-- Interactive Studio Styling & Modifiers Bar -->
+<section aria-label="Styling Parameter Modifikatoren" class="px-margin mb-space-lg">
+<div class="rounded-DEFAULT bg-surface-container-low p-space-md shadow-md space-y-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">tune</span>
+<span class="font-label-lg text-label-lg text-on-surface">Styling &amp; Finish Modifikatoren</span>
+</div>
+<span class="font-hud-metric text-hud-metric px-space-xs py-space-xxs rounded bg-surface-container-highest text-secondary uppercase">Studio Rig Active</span>
+</div>
+<!-- Make-up Selector & Intensity -->
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface-variant flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-tertiary">brush</span>
+            Make-up Look
+          </label>
+<span class="font-hud-metric text-hud-metric text-tertiary uppercase" id="makeup-indicator-label">Glow Glam · 80%</span>
+</div>
+<div class="grid grid-cols-3 gap-space-xs">
+<button class="makeup-btn py-space-xs px-space-sm rounded bg-surface-container text-on-surface-variant font-label-md text-label-md transition-colors text-center" onclick="setMakeup('Natürlich')" type="button">
+            Natürlich
+          </button>
+<button class="makeup-btn py-space-xs px-space-sm rounded bg-surface-container text-on-surface-variant font-label-md text-label-md transition-colors text-center" onclick="setMakeup('Smokey')" type="button">
+            Smokey
+          </button>
+<button class="makeup-btn active py-space-xs px-space-sm rounded bg-tertiary-container text-on-tertiary-container font-label-md text-label-md font-semibold transition-colors text-center" onclick="setMakeup('Glow Glam')" type="button">
+            Glow Glam
+          </button>
+</div>
+<!-- Intensity Slider Simulation -->
+<div class="flex items-center gap-space-sm pt-space-xxs">
+<span class="font-label-caps text-label-caps text-outline">DEZENT</span>
+<input aria-label="Make-up Intensität" class="w-full accent-primary bg-surface-container-highest h-1 rounded-full cursor-pointer" id="makeup-slider" max="100" min="10" oninput="updateMakeupIntensity(this.value)" type="range" value="80">
+<span class="font-label-caps text-label-caps text-outline">INTENSIV</span>
+</div>
+</div>
+<!-- Hair & Finish Selector -->
+<div class="space-y-space-xs pt-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface-variant flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-secondary">face_retouching_natural</span>
+            Frisur &amp; Textur
+          </label>
+<span class="font-hud-metric text-hud-metric text-secondary uppercase" id="hair-label">Wet Hair Look</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs">
+<button class="hair-btn active py-space-xs px-space-sm rounded bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-between text-left" onclick="setHair(this, 'Wet Hair Look')" type="button">
+<span class="truncate">Wet Hair Look</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+</button>
+<button class="hair-btn py-space-xs px-space-sm rounded bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center justify-between text-left" onclick="setHair(this, 'Beach Waves')" type="button">
+<span class="truncate">Beach Waves</span>
+<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+</button>
+<button class="hair-btn py-space-xs px-space-sm rounded bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center justify-between text-left" onclick="setHair(this, 'Sleek Bob')" type="button">
+<span class="truncate">Sleek Bob</span>
+<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+</button>
+<button class="hair-btn py-space-xs px-space-sm rounded bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center justify-between text-left" onclick="setHair(this, 'Vintage Curls')" type="button">
+<span class="truncate">Vintage Curls</span>
+<span class="w-1.5 h-1.5 rounded-full bg-transparent"></span>
+</button>
+</div>
+</div>
+<!-- Tattoo Placement -->
+<div class="space-y-space-xs pt-space-xs">
+<label class="font-label-md text-label-md text-on-surface-variant flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[16px] text-primary">draw</span>
+          Tattoo Integration
+        </label>
+<div class="flex gap-space-xs overflow-x-auto no-scrollbar py-space-xxs" id="tattoo-selector-row">
+<button class="tattoo-pill flex-shrink-0 px-space-sm py-space-xs rounded bg-surface-container text-on-surface-variant font-label-md text-label-md" onclick="setTattoo(this, 'Keine')" type="button">
+            Keine
+          </button>
+<button class="tattoo-pill active flex-shrink-0 px-space-sm py-space-xs rounded bg-primary-container text-on-primary-container font-label-md text-label-md font-semibold" onclick="setTattoo(this, 'Fine Line Arm')" type="button">
+            Fine Line Arm
+          </button>
+<button class="tattoo-pill flex-shrink-0 px-space-sm py-space-xs rounded bg-surface-container text-on-surface-variant font-label-md text-label-md" onclick="setTattoo(this, 'Chest Piece')" type="button">
+            Chest Piece
+          </button>
+<button class="tattoo-pill flex-shrink-0 px-space-sm py-space-xs rounded bg-surface-container text-on-surface-variant font-label-md text-label-md" onclick="setTattoo(this, 'Micro-Tattoos')" type="button">
+            Micro-Tattoos
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Motive Cards: 2-Column Grid -->
+<section aria-label="Motive Auswahl" class="px-margin mb-space-2xl">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Katalog Kollektion</h3>
+<span class="font-label-caps text-label-caps px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface-variant">4 VERFÜGBAR</span>
+</div>
+<button class="text-primary font-label-md text-label-md flex items-center gap-space-xxs hover:underline" type="button">
+<span class="">Alle filtern</span>
+<span class="material-symbols-outlined text-[16px]">tune</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-gutter" id="motive-grid">
+<!-- Card 1: Paris Fashion Week Editorial -->
+<article class="motive-card group relative flex flex-col rounded-DEFAULT bg-surface-container overflow-hidden shadow-md cursor-pointer transition-transform duration-200 active:scale-95" id="motive-card-1" onclick="selectMotive(1, 'Paris Editorial', 'Vogue Editorial', 'High-Fashion Mantel, goldene Abendsonne')">
+<!-- Selection Highlight Badge -->
+<div class="selection-indicator absolute top-space-xs right-space-xs z-20 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="relative w-full aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="High fashion editorial photography of an elegant woman wearing an oversized tailored camel coat walking along the Pont Alexandre III in Paris during golden hour sunset, warm cinematic amber backlight, atmospheric Seine river reflections, realistic skin texture with couture makeup, highly detailed 35mm lens shot." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7Qt0NZhjbK1_eRYtsSDvdNy4TlPe9QT9e7H7gWN0Miz8tzlHLjRzd1bHM-P8NUpcFIugLs2tXlCLR8xc8DL_OiA4Mm40ks2Zx2QMJ5mzWe91GqDyFxLIKED83zlOxjGk4RzeXtPxf1z3eah4EXBQ6JANGz7HCgU9FF-LqoCVgZVmI1OdOHzzoXsuYFX4NipxKENPA1lNuGaobUAHCR0pr3pwk8oRJEkoh1HpLK1JXlE5kqBdeAB6ZxQ">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-black/30"></div>
+<!-- Trend Badge -->
+<div class="absolute top-space-xs left-space-xs z-10 px-space-xs py-space-xxs rounded-full bg-secondary-container/90 backdrop-blur-md text-on-secondary-container font-hud-metric text-hud-metric uppercase flex items-center gap-space-xxs">
+<span class="material-symbols-outlined text-[12px]">local_fire_department</span>
+<span class="">TOP TREND</span>
+</div>
+<!-- Bottom Visual Details Tag -->
+<div class="absolute bottom-space-xs left-space-xs right-space-xs z-10">
+<span class="inline-block px-space-xs py-space-xxs rounded bg-surface-container-lowest/80 backdrop-blur-md text-primary font-label-caps text-label-caps uppercase mb-space-xxs">Ultra-Realistisch</span>
+<h4 class="font-label-lg text-label-lg text-on-surface truncate">Paris Fashion Week</h4>
+</div>
+</div>
+<div class="p-space-sm flex flex-col justify-between flex-1 bg-surface-container">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">High-Fashion Mantel &amp; dramatische Abendsonne an der Seine.</p>
+<div class="flex items-center gap-space-xxs mt-space-xs flex-wrap">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Editorial</span>
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">35mm</span>
+</div>
+</div>
+</article>
+<!-- Card 2: Neon Noir & Fine-Line Tattoos -->
+<article class="motive-card group relative flex flex-col rounded-DEFAULT bg-surface-container-low overflow-hidden shadow-md cursor-pointer transition-transform duration-200 active:scale-95" id="motive-card-2" onclick="selectMotive(2, 'Neon Noir &amp; Ink', 'Cyberpunk &amp; Ink', 'Cinematic Bokeh, zarte Tattoos, Lederjacke')">
+<div class="selection-indicator hidden absolute top-space-xs right-space-xs z-20 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="relative w-full aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Cinematic night portrait of a stylish subject wearing a distressed black leather biker jacket in a rain-slicked Tokyo alley, vivid magenta and cyan neon sign bokeh reflections, delicate botanical fine-line tattoos clearly visible on the neck and wrist, moody chiaroscuro lighting, cinematic film grain." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoZgoo5TRB0egBbTB5kv4W5U38QcC4pPcrz9U1kVZtV2q4-12UKbfeUjUvEF1OP8Zez8sKEvQq4mUjX1Ve6r7ZHDETjAeKlk3ODx24QOCNNJqmz0ALJEPClwJa8RFavwm3a9yXwbpKXM9ECrYRvgbXbm2uncoYjoYLOpVHaFk6EWwpgM4moP70yAp70H1GBHlpbgRrf_g2bSU1mm6jV-oC4txHt-36FdtsKlta6_ozuaPMGeUyhITdbg">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-black/30"></div>
+<!-- Trend Badge -->
+<div class="absolute top-space-xs left-space-xs z-10 px-space-xs py-space-xxs rounded-full bg-tertiary-container/90 backdrop-blur-md text-on-tertiary-container font-hud-metric text-hud-metric uppercase flex items-center gap-space-xxs">
+<span class="material-symbols-outlined text-[12px]">auto_awesome</span>
+<span class="">CYBER INK</span>
+</div>
+<div class="absolute bottom-space-xs left-space-xs right-space-xs z-10">
+<span class="inline-block px-space-xs py-space-xxs rounded bg-surface-container-lowest/80 backdrop-blur-md text-tertiary font-label-caps text-label-caps uppercase mb-space-xxs">Cinematic Bokeh</span>
+<h4 class="font-label-lg text-label-lg text-on-surface truncate">Neon Noir &amp; Ink</h4>
+</div>
+</div>
+<div class="p-space-sm flex flex-col justify-between flex-1 bg-surface-container">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Zarte Tattoos, nasser Asphalt &amp; violettes Neonlicht.</p>
+<div class="flex items-center gap-space-xxs mt-space-xs flex-wrap">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Fine-Line</span>
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Moody</span>
+</div>
+</div>
+</article>
+<!-- Card 3: Monaco Yacht Old Money -->
+<article class="motive-card group relative flex flex-col rounded-DEFAULT bg-surface-container-low overflow-hidden shadow-md cursor-pointer transition-transform duration-200 active:scale-95" id="motive-card-3" onclick="selectMotive(3, 'Monaco Yacht', 'Old Money Glam', 'Polo, Vintage Sonnenbrille, analoger 35mm Look')">
+<div class="selection-indicator hidden absolute top-space-xs right-space-xs z-20 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="relative w-full aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Sun-drenched luxury lifestyle photograph on a classic mahogany wooden Riva yacht in the harbor of Monaco, subject wearing a crisp cream linen polo shirt with tortoise shell sunglasses pushed up into sun-kissed hair, deep azure Mediterranean waters in the background, vintage Kodachrome 35mm film aesthetic with natural lens flare." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwvXbbiEfT6wahlscbSpJ_D17r40VCrYgqlDPCitooghUFuVq64D0W5Hqecr77qDSULawMP-VYEURAyE0dSi_7GZnwLOADoClneKe5nrdRsvHuJZhsxkXRr-3CmkDwuOQAFy4KR8sXPaSPf7ieRcbwSmEAnCFlF6-56Pbydf1l6YShf9JcohzeAUI8371tm6yZlTFYBmyvmp2b59JiiJtkaZ_e2bQ2G7dCnoSEBRa1kchiPA1nmdphdQ">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-black/30"></div>
+<!-- Badge -->
+<div class="absolute top-space-xs left-space-xs z-10 px-space-xs py-space-xxs rounded-full bg-surface-container-highest/90 backdrop-blur-md text-secondary font-hud-metric text-hud-metric uppercase flex items-center gap-space-xxs">
+<span class="material-symbols-outlined text-[12px]">diamond</span>
+<span class="">OLD MONEY</span>
+</div>
+<div class="absolute bottom-space-xs left-space-xs right-space-xs z-10">
+<span class="inline-block px-space-xs py-space-xxs rounded bg-surface-container-lowest/80 backdrop-blur-md text-secondary-fixed-dim font-label-caps text-label-caps uppercase mb-space-xxs">35mm Film Grain</span>
+<h4 class="font-label-lg text-label-lg text-on-surface truncate">Monaco Yacht</h4>
+</div>
+</div>
+<div class="p-space-sm flex flex-col justify-between flex-1 bg-surface-container">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Linen Polo, Vintage Sonnenbrille &amp; Côte d’Azur Flair.</p>
+<div class="flex items-center gap-space-xxs mt-space-xs flex-wrap">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Kodachrome</span>
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Riviera</span>
+</div>
+</div>
+</article>
+<!-- Card 4: Met Gala Midnight Velvet -->
+<article class="motive-card group relative flex flex-col rounded-DEFAULT bg-surface-container-low overflow-hidden shadow-md cursor-pointer transition-transform duration-200 active:scale-95" id="motive-card-4" onclick="selectMotive(4, 'Midnight Velvet', 'Haute Couture', 'Dramatisches Studio-Licht, Haute Couture')">
+<div class="selection-indicator hidden absolute top-space-xs right-space-xs z-20 w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="relative w-full aspect-[3/4] overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Dramatic high fashion red carpet studio portrait of an opulent midnight blue velvet cape gown with structured architectural shoulders, sharp studio spotlighting creating sculptural highlights, opulent diamond jewelry catching the light, dark graphite textured backdrop, Met Gala avant-garde aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlPsw2Ddm9Ny0JqADTyT8l0YktwPfI6TP_KFvhWri5oC3sbyRYwU4AF-4HSMif5E_uTvDPYarRfoDQSRWo5Jtm_GVwLIKE3jQ4wxvTLsuzk9c6MBv-sF5tsTA3au8ka0kxEIj_VsPlscXuyQ9ZloR3r8YNAEBQmgw77luLoxFpv1XkGo23KzvuloN95IvnGptit7WtTAFvsM5bid3_C37X204a_qyTRu0SdMS88bD8-0WpDfy5h7YyAA">
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-black/30"></div>
+<!-- Trend Badge -->
+<div class="absolute top-space-xs left-space-xs z-10 px-space-xs py-space-xxs rounded-full bg-surface-container-highest/90 backdrop-blur-md text-primary font-hud-metric text-hud-metric uppercase flex items-center gap-space-xxs">
+<span class="material-symbols-outlined text-[12px]">star</span>
+<span class="">AVANT-GARDE</span>
+</div>
+<div class="absolute bottom-space-xs left-space-xs right-space-xs z-10">
+<span class="inline-block px-space-xs py-space-xxs rounded bg-surface-container-lowest/80 backdrop-blur-md text-primary-fixed font-label-caps text-label-caps uppercase mb-space-xxs">Sculptural Key Light</span>
+<h4 class="font-label-lg text-label-lg text-on-surface truncate">Met Gala Velvet</h4>
+</div>
+</div>
+<div class="p-space-sm flex flex-col justify-between flex-1 bg-surface-container">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Dramatisches Studio-Spotlight &amp; Architektonisches Samtkleid.</p>
+<div class="flex items-center gap-space-xxs mt-space-xs flex-wrap">
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Gala</span>
+<span class="px-space-xs py-space-xxs rounded bg-surface-container-high text-on-surface font-label-caps text-label-caps">Velvet</span>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- Sticky Floating Quick-Action Banner (Docked above bottom nav) -->
+<aside aria-label="Aktionsleiste" class="sticky bottom-24 z-40 px-margin w-full pointer-events-none mb-space-xs">
+<div class="pointer-events-auto w-full rounded-full bg-surface-container-highest/95 backdrop-blur-2xl p-space-xs shadow-2xl flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm min-w-0 pl-space-sm">
+<div class="relative flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">motion_photos_on</span>
+<span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xxs">
+<span class="font-hud-metric text-hud-metric uppercase text-secondary font-bold">1 MOTIV BEREIT</span>
+<span class="text-outline text-label-caps">·</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant truncate" id="active-mods-badge">Glow (80%) · Wet · Fine Line Arm</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate" id="selected-motive-title">Paris Fashion Week</span>
+</div>
+</div>
+<button class="flex-shrink-0 px-space-md py-space-xs rounded-full bg-primary text-on-primary font-label-lg text-label-lg flex items-center gap-space-xs shadow-md hover:opacity-95 active:scale-95 transition-all" onclick="goToStudio()" type="button">
+<span class="">Zu den Render-Optionen</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</aside>
+</div>
+<script>
+  let currentSelection = {
+    id: 1,
+    title: 'Paris Editorial',
+    category: 'Vogue Editorial',
+    makeup: 'Glow Glam',
+    makeupIntensity: 80,
+    hair: 'Wet Hair Look',
+    tattoo: 'Fine Line Arm'
+  };
+
+  function updateModsBadge() {
+    const badge = document.getElementById('active-mods-badge');
+    if (!badge) return;
+    const shortHair = currentSelection.hair.split(' ')[0];
+    const shortTattoo = currentSelection.tattoo === 'Keine' ? 'No Tattoo' : currentSelection.tattoo.replace('Tattoos', '');
+    badge.textContent = `${currentSelection.makeup.replace(' Glam', '')} (${currentSelection.makeupIntensity}%) · ${shortHair} · ${shortTattoo}`;
+  }
+
+  function selectMotive(id, title, category, desc) {
+    currentSelection.id = id;
+    currentSelection.title = title;
+    currentSelection.category = category;
+
+    // Update Cards styling
+    for (let i = 1; i <= 4; i++) {
+      const card = document.getElementById(`motive-card-${i}`);
+      if (!card) continue;
+      const indicator = card.querySelector('.selection-indicator');
+      if (i === id) {
+        card.classList.remove('bg-surface-container-low');
+        card.classList.add('bg-surface-container');
+        if (indicator) indicator.classList.remove('hidden');
+      } else {
+        card.classList.add('bg-surface-container-low');
+        card.classList.remove('bg-surface-container');
+        if (indicator) indicator.classList.add('hidden');
+      }
+    }
+
+    const titleEl = document.getElementById('selected-motive-title');
+    if (titleEl) {
+      titleEl.textContent = title;
+    }
+  }
+
+  function setMakeup(style) {
+    currentSelection.makeup = style;
+    document.querySelectorAll('.makeup-btn').forEach(btn => {
+      if (btn.textContent.trim() === style) {
+        btn.classList.add('active', 'bg-tertiary-container', 'text-on-tertiary-container', 'font-semibold');
+        btn.classList.remove('bg-surface-container', 'text-on-surface-variant');
+      } else {
+        btn.classList.remove('active', 'bg-tertiary-container', 'text-on-tertiary-container', 'font-semibold');
+        btn.classList.add('bg-surface-container', 'text-on-surface-variant');
+      }
+    });
+    const label = document.getElementById('makeup-indicator-label');
+    if (label) label.textContent = `${style} · ${currentSelection.makeupIntensity}%`;
+    updateModsBadge();
+  }
+
+  function updateMakeupIntensity(val) {
+    currentSelection.makeupIntensity = val;
+    const label = document.getElementById('makeup-indicator-label');
+    if (label) label.textContent = `${currentSelection.makeup} · ${val}%`;
+    updateModsBadge();
+  }
+
+  function setHair(element, style) {
+    currentSelection.hair = style;
+    document.querySelectorAll('.hair-btn').forEach(btn => {
+      const dot = btn.querySelector('span:last-child');
+      btn.classList.remove('bg-surface-container-highest', 'text-on-surface');
+      btn.classList.add('bg-surface-container', 'text-on-surface-variant');
+      if (dot) dot.classList.replace('bg-secondary', 'bg-transparent');
+    });
+
+    element.classList.remove('bg-surface-container', 'text-on-surface-variant');
+    element.classList.add('bg-surface-container-highest', 'text-on-surface');
+    const activeDot = element.querySelector('span:last-child');
+    if (activeDot) activeDot.classList.replace('bg-transparent', 'bg-secondary');
+
+    const hairLabel = document.getElementById('hair-label');
+    if (hairLabel) hairLabel.textContent = style;
+    updateModsBadge();
+  }
+
+  function setTattoo(element, style) {
+    currentSelection.tattoo = style;
+    document.querySelectorAll('.tattoo-pill').forEach(pill => {
+      pill.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-semibold');
+      pill.classList.add('bg-surface-container', 'text-on-surface-variant');
+    });
+
+    element.classList.remove('bg-surface-container', 'text-on-surface-variant');
+    element.classList.add('bg-primary-container', 'text-on-primary-container', 'font-semibold');
+    updateModsBadge();
+  }
+
+  function goToStudio() {
+    const studioLink = document.querySelector('nav a[data-path="studio"]');
+    if (studioLink) {
+      studioLink.click();
+    } else {
+      window.location.hash = '#studio';
+    }
+  }
+
+  // Filter Pills micro-state
+  document.querySelectorAll('.category-pill').forEach(pill => {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.category-pill').forEach(p => {
+        p.classList.remove('bg-surface-container-highest', 'text-on-surface');
+        p.classList.add('bg-surface-container', 'text-on-surface-variant');
+        const dot = p.querySelector('span.w-1\\.5');
+        if (dot) dot.remove();
+      });
+      this.classList.remove('bg-surface-container', 'text-on-surface-variant');
+      this.classList.add('bg-surface-container-highest', 'text-on-surface');
+      if (!this.querySelector('span.w-1\\.5')) {
+        const dot = document.createElement('span');
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-primary mr-1 inline-block';
+        this.prepend(dot);
+      }
+    });
+  });
+
+  // Init badge
+  updateModsBadge();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)]" data-active-classes="text-primary font-bold drop-shadow-[0_0_12px_rgba(208,188,255,0.45)]"><div class="flex justify-around items-center h-20 px-space-xs"><a class="flex flex-col items-center justify-center gap-space-xxs min-h-[44px] min-w-[44px] flex-1 py-space-xs text-on-surface-variant transition-all hover:text-on-surface" data-path="face-vault" href="#"><span class="material-symbols-outlined text-[24px]">face</span><span class="font-label-caps text-label-caps">VAULT</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-space-xxs min-h-[44px] min-w-[44px] flex-1 py-space-xs transition-all text-primary font-bold drop-shadow-[0_0_12px_rgba(208,188,255,0.45)]" data-path="motive" href="#"><span class="material-symbols-outlined text-[24px]">auto_awesome_motion</span><span class="font-label-caps text-label-caps">MOTIVE</span></a><a class="flex flex-col items-center justify-center gap-space-xxs min-h-[44px] min-w-[44px] flex-1 py-space-xs text-on-surface-variant transition-all hover:text-on-surface" data-path="studio" href="#"><span class="material-symbols-outlined text-[24px]">tune</span><span class="font-label-caps text-label-caps">STUDIO</span></a><a class="flex flex-col items-center justify-center gap-space-xxs min-h-[44px] min-w-[44px] flex-1 py-space-xs text-on-surface-variant transition-all hover:text-on-surface" data-path="galerie" href="#"><span class="material-symbols-outlined text-[24px]">photo_library</span><span class="font-label-caps text-label-caps">GALERIE</span></a></div></nav>
+
+</body></html>
