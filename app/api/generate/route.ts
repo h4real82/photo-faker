@@ -1,45 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Client, handle_file } from "@gradio/client";
-import fs from "fs";
-import path from "path";
 
 export const maxDuration = 300;
 
 interface MotifConfig {
   prompt: string;
-  negative_prompt: string;
 }
 
-// Zwingender negativer Prompt für maximalen Fotorealismus
+// Zwingend vorgegebener negativer Prompt
 const MANDATORY_NEGATIVE_PROMPT =
-  "painting, drawing, illustration, cartoon, anime, 3d render, cgi, smooth skin, airbrushed, oversaturated, blurry, bad anatomy, deformed";
+  "painting, drawing, cartoon, anime, illustration, 3d render, cgi, smooth skin, blur, bad quality";
 
-// Automatischer Photo-Prompt-Booster für Porträt-Schärfe und echte Kameratextur
+// Automatischer Photo-Prompt-Booster für Text-to-Image & Porträt-Generierung
 const PHOTO_PROMPT_BOOSTER =
-  "raw candid 35mm photo, detailed skin texture, pores, authentic lighting, natural shadows, shot on Sony A7 IV, 85mm f/1.4 lens, photographic, highly detailed, photorealistic";
+  "raw candid 35mm photograph, natural lighting, shot on Sony A7 IV, detailed skin texture, photorealistic, 8k";
 
 const MOTIFS: Record<string, MotifConfig> = {
   "paris-fashion": {
     prompt:
       "high fashion editorial photoshoot at Pont Alexandre III Paris, wearing a luxury haute couture beige oversized trench coat, soft dramatic golden hour sunset backlighting, natural catchlight in eyes, creamy bokeh backdrop, Kodak Portra 400 color grading",
-    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
   "neon-noir": {
     prompt:
       "cinematic high-fashion nocturnal portrait in rainy Tokyo Shinjuku street, wearing a sleek wet black leather motorcycle jacket, atmospheric moody street reflections, subtle magenta and cyan rim light highlighting jawline and cheekbones",
-    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
   "monaco-yacht": {
     prompt:
       "luxury editorial lifestyle photoshoot on the teak deck of a private superyacht in Monaco harbor, wearing an unbuttoned crisp white linen shirt, Mediterranean bright summer sun, soft warm fill light, natural relaxed smile, sun-kissed look, soft ocean bokeh",
-    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
   "met-gala": {
     prompt:
       "glamorous celebrity red carpet entrance at Met Gala, dressed in an opulent dark emerald velvet tailored evening jacket with gemstone accents, dramatic paparazzi flash photography, high contrast lighting",
-    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
 };
+
+function extractImageUrl(raw: any, spaceSlug: string): string {
+  if (!raw) return "";
+  let url = "";
+  if (typeof raw === "string") {
+    url = raw;
+  } else if (typeof raw === "object") {
+    url = raw.url || raw.path || raw.image?.url || raw.image?.path || "";
+  }
+  if (url.startsWith("/")) {
+    url = `https://${spaceSlug.replace("/", "-").toLowerCase()}.hf.space${url}`;
+  }
+  return url;
+}
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
@@ -54,9 +61,11 @@ export async function POST(req: NextRequest) {
       aspectRatio = "4:5",
     } = await req.json();
 
-    if (!faceImageBase64) {
+    // Biometrie-Modelle verlangen zwingend ein Gesicht
+    const requiresFace = modelId === "instantid" || modelId === "photomaker";
+    if (requiresFace && !faceImageBase64) {
       return NextResponse.json(
-        { error: "Kein Referenzgesicht übermittelt" },
+        { error: "Für dieses Modell wird ein Referenzgesicht benötigt." },
         { status: 400 }
       );
     }
@@ -72,22 +81,24 @@ export async function POST(req: NextRequest) {
     // Automatischer Photo-Prompt-Booster für maximalen Fotorealismus
     const boostedPrompt = `${basePrompt}, ${PHOTO_PROMPT_BOOSTER}`;
 
-    // Gesichtsdaten in File konvertieren (flüchtig im RAM / Zero-Retention)
-    let file: File;
-    if (faceImageBase64.startsWith("data:")) {
-      const mimeMatch = faceImageBase64.match(/^data:([^;]+);base64,/);
-      const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
-      const ext = mimeType.split("/")[1] || "jpg";
-      const base64Data = faceImageBase64.replace(/^data:[^;]+;base64,/, "");
-      const buffer = Buffer.from(base64Data, "base64");
-      const blob = new Blob([buffer], { type: mimeType });
-      file = new File([blob], `input_face.${ext}`, { type: mimeType });
-    } else {
-      const res = await fetch(faceImageBase64);
-      const blob = await res.blob();
-      file = new File([blob], "input_face.jpg", {
-        type: blob.type || "image/jpeg",
-      });
+    // Gesichtsdaten in File konvertieren falls vorhanden
+    let file: File | null = null;
+    if (faceImageBase64) {
+      if (faceImageBase64.startsWith("data:")) {
+        const mimeMatch = faceImageBase64.match(/^data:([^;]+);base64,/);
+        const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+        const ext = mimeType.split("/")[1] || "jpg";
+        const base64Data = faceImageBase64.replace(/^data:[^;]+;base64,/, "");
+        const buffer = Buffer.from(base64Data, "base64");
+        const blob = new Blob([buffer], { type: mimeType });
+        file = new File([blob], `input_face.${ext}`, { type: mimeType });
+      } else {
+        const res = await fetch(faceImageBase64);
+        const blob = await res.blob();
+        file = new File([blob], "input_face.jpg", {
+          type: blob.type || "image/jpeg",
+        });
+      }
     }
 
     const hfToken =
@@ -96,13 +107,118 @@ export async function POST(req: NextRequest) {
       hf_token: (hfToken as `hf_${string}`) || undefined,
     };
 
+    // Dimensionen für Text-to-Image Modelle ableiten
+    const resolutionMap: Record<string, { width: number; height: number }> = {
+      "1:1": { width: 1024, height: 1024 },
+      "4:5": { width: 896, height: 1152 },
+      "9:16": { width: 768, height: 1344 },
+    };
+    const { width, height } = resolutionMap[aspectRatio] || resolutionMap["4:5"];
+
     let images: string[] = [];
     let providerName = "";
 
     switch (modelId) {
-      // Model 1: PhotoMaker V2
+      // 1. InstantID (SDXL) - Strikter Gesichtserhalt 1:1
+      case "instantid": {
+        providerName = "InstantID SDXL (InstantX)";
+        if (!file) throw new Error("Kein Gesichtsfoto übergeben");
+
+        const idClient = await Client.connect("InstantX/InstantID", clientOptions);
+        const identityRatio = identityStrength
+          ? Math.min(Math.max(identityStrength / 100, 0.6), 1.0)
+          : 0.8;
+        const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 4);
+
+        for (let i = 0; i < targetCount; i++) {
+          try {
+            const seed = Math.floor(Math.random() * 2147483647);
+            const result = await idClient.predict("/generate_image", {
+              face_image_path: handle_file(file),
+              pose_image_path: null,
+              prompt: boostedPrompt,
+              negative_prompt: MANDATORY_NEGATIVE_PROMPT,
+              style_name: "(No style)",
+              num_steps: 30,
+              identitynet_strength_ratio: identityRatio,
+              adapter_strength_ratio: 0.8,
+              canny_strength: 0.4,
+              depth_strength: 0.4,
+              controlnet_selection: ["depth"],
+              guidance_scale: 5,
+              seed: seed,
+              scheduler: "EulerDiscreteScheduler",
+              enable_LCM: false,
+              enhance_face_region: true,
+            });
+
+            const imgUrl = extractImageUrl((result as any)?.data?.[0], "instantx/instantid");
+            if (imgUrl) images.push(imgUrl);
+          } catch (err: any) {
+            console.warn(`InstantID Variation ${i + 1} abgebrochen:`, err?.message);
+            if (images.length > 0) break;
+            throw err;
+          }
+        }
+        break;
+      }
+
+      // 2. FLUX.1 Schnell - Beste Fotoqualität
+      case "flux": {
+        providerName = "FLUX.1 Schnell (Black Forest Labs)";
+        const fluxClient = await Client.connect(
+          "black-forest-labs/FLUX.1-schnell",
+          clientOptions
+        );
+
+        const result = await fluxClient.predict("/infer", {
+          prompt: boostedPrompt,
+          seed: Math.floor(Math.random() * 2147483647),
+          randomize_seed: true,
+          width: width,
+          height: height,
+          num_inference_steps: 4,
+        });
+
+        const imgUrl = extractImageUrl(
+          (result as any)?.data?.[0],
+          "black-forest-labs/flux-1-schnell"
+        );
+        if (imgUrl) images.push(imgUrl);
+        break;
+      }
+
+      // 3. Qwen-Image 2.1 - Top Textur & Details
+      case "qwen": {
+        providerName = "Qwen-Image 2.1 (Alibaba Cloud Qwen)";
+        const qwenClient = await Client.connect("Qwen/Qwen-Image-2.1", clientOptions);
+
+        const result = await qwenClient.predict("/generate_with_enhance", {
+          input_images: [],
+          original_prompt: boostedPrompt,
+          enable_extend: false,
+          custom_size: true,
+          log_dir: "./generation_logs_paper_case",
+          seed: Math.floor(Math.random() * 2147483647),
+          randomize_seed: true,
+          height: height,
+          width: width,
+          negative_prompt: MANDATORY_NEGATIVE_PROMPT,
+        });
+
+        const imgUrl = extractImageUrl(
+          (result as any)?.data?.[0],
+          "qwen/qwen-image-2-1"
+        );
+        if (imgUrl) images.push(imgUrl);
+        break;
+      }
+
+      // 4. PhotoMaker V2 - Gute Ähnlichkeit & Style
       case "photomaker": {
         providerName = "PhotoMaker V2 (TencentARC)";
+        if (!file) throw new Error("Kein Gesichtsfoto übergeben");
+
         const pmClient = await Client.connect(
           "TencentARC/PhotoMaker-V2",
           clientOptions
@@ -141,126 +257,42 @@ export async function POST(req: NextRequest) {
           adapter_conditioning_factor: 0.8,
         });
 
-        // PhotoMaker liefert eine Galerie
         const gallery = (result as any)?.data?.[0];
         if (Array.isArray(gallery)) {
           for (const item of gallery) {
-            let u =
-              item?.image?.url ||
-              item?.image?.path ||
-              item?.url ||
-              (typeof item === "string" ? item : "");
-            if (u.startsWith("/")) {
-              u = `https://tencentarc-photomaker-v2.hf.space${u}`;
-            }
+            const u = extractImageUrl(item, "tencentarc/photomaker-v2");
             if (u) images.push(u);
           }
         }
         break;
       }
 
-      // Model 2: Direct FaceSwap
-      case "faceswap": {
-        providerName = "Direct FaceSwap (Dentro)";
-        const fsClient = await Client.connect("Dentro/face-swap", clientOptions);
-
-        // Ziel-Shooting-Motiv laden
-        const targetPath = path.join(
-          process.cwd(),
-          "public",
-          "motifs",
-          `${motifId}.jpg`
-        );
-        let destFile: File;
-        if (fs.existsSync(targetPath)) {
-          const destBuf = fs.readFileSync(targetPath);
-          const destBlob = new Blob([destBuf], { type: "image/jpeg" });
-          destFile = new File([destBlob], `${motifId}.jpg`, {
-            type: "image/jpeg",
-          });
-        } else {
-          destFile = file;
-        }
-
-        const result = await fsClient.predict("/predict", {
-          sourceImage: handle_file(file),
-          sourceFaceIndex: 1,
-          destinationImage: handle_file(destFile),
-          destinationFaceIndex: 1,
-        });
-
-        const rawOutput = (result as any)?.data?.[0];
-        let imageUrl = "";
-        if (typeof rawOutput === "string") {
-          imageUrl = rawOutput;
-        } else if (rawOutput && typeof rawOutput === "object") {
-          imageUrl = rawOutput.url || rawOutput.path || "";
-        }
-        if (imageUrl.startsWith("/")) {
-          imageUrl = `https://dentro-face-swap.hf.space${imageUrl}`;
-        }
-        if (imageUrl) {
-          images.push(imageUrl);
-        }
-        break;
-      }
-
-      // Model 3: InstantID (SDXL) (Standard)
-      case "instantid":
-      default: {
-        providerName = "InstantID SDXL (InstantX)";
-        const idClient = await Client.connect(
-          "InstantX/InstantID",
+      // 5. SDXL Lightning - Ultra-schnell
+      case "lightning": {
+        providerName = "SDXL-Lightning (ByteDance)";
+        const lightClient = await Client.connect(
+          "ByteDance/SDXL-Lightning",
           clientOptions
         );
 
-        const identityRatio = identityStrength
-          ? Math.min(Math.max(identityStrength / 100, 0.6), 1.0)
-          : 0.8;
-        const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 4);
+        const result = await lightClient.predict("/generate_image", {
+          prompt: boostedPrompt,
+          ckpt: "4-Step",
+        });
 
-        for (let i = 0; i < targetCount; i++) {
-          try {
-            const seed = Math.floor(Math.random() * 2147483647);
-            const result = await idClient.predict("/generate_image", {
-              face_image_path: handle_file(file),
-              pose_image_path: null,
-              prompt: boostedPrompt,
-              negative_prompt: MANDATORY_NEGATIVE_PROMPT,
-              style_name: "(No style)",
-              num_steps: 30,
-              identitynet_strength_ratio: identityRatio,
-              adapter_strength_ratio: 0.8,
-              canny_strength: 0.4,
-              depth_strength: 0.4,
-              controlnet_selection: ["depth"],
-              guidance_scale: 5,
-              seed: seed,
-              scheduler: "EulerDiscreteScheduler",
-              enable_LCM: false,
-              enhance_face_region: true,
-            });
-
-            const rawOutput = (result as any)?.data?.[0];
-            let imageUrl = "";
-            if (typeof rawOutput === "string") {
-              imageUrl = rawOutput;
-            } else if (rawOutput && typeof rawOutput === "object") {
-              imageUrl = rawOutput.url || rawOutput.path || "";
-            }
-            if (imageUrl.startsWith("/")) {
-              imageUrl = `https://instantx-instantid.hf.space${imageUrl}`;
-            }
-            if (imageUrl) {
-              images.push(imageUrl);
-            }
-          } catch (err: any) {
-            console.warn(`InstantID Variation ${i + 1} abgebrochen:`, err?.message);
-            if (images.length > 0) break;
-            throw err;
-          }
-        }
+        const imgUrl = extractImageUrl(
+          (result as any)?.data?.[0],
+          "bytedance/sdxl-lightning"
+        );
+        if (imgUrl) images.push(imgUrl);
         break;
+      }
+
+      default: {
+        return NextResponse.json(
+          { error: `Unbekanntes Modell: ${modelId}` },
+          { status: 400 }
+        );
       }
     }
 
@@ -268,7 +300,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Keine Bilder vom KI-Modell empfangen. Bitte überprüfe das Gesichtsfoto auf klare Erkennbarkeit.",
+            "Keine Bilder vom KI-Modell empfangen. Bitte überprüfe den Prompt oder versuche ein anderes Modell.",
         },
         { status: 500 }
       );
@@ -296,13 +328,13 @@ export async function POST(req: NextRequest) {
       msg.includes("GPU quota")
     ) {
       msg =
-        "ZeroGPU-Limit für dieses Modell erreicht. Wähle oben einfach 'Direct FaceSwap' (ohne GPU-Limit) für sofortige Generierung!";
+        "ZeroGPU-Limit auf Hugging Face erreicht. Hinterlege einen kostenlosen HF_TOKEN in .env.local für mehr Kontingent oder wähle ein anderes Modell!";
     } else if (msg.includes("Unable to detect a face")) {
       msg =
         "Auf dem Foto konnte kein Gesicht erkannt werden. Bitte lade ein frontales Porträtfoto mit guter Ausleuchtung hoch.";
     } else if (msg.includes("queue") || msg.includes("timeout")) {
       msg =
-        "Die Hugging-Face-Warteschlange ist ausgelastet. Bitte versuche es in wenigen Sekunden erneut oder wähle 'Direct FaceSwap'.";
+        "Die Hugging-Face-Warteschlange ist ausgelastet. Bitte versuche es in wenigen Sekunden erneut.";
     }
 
     return NextResponse.json({ error: msg }, { status: 500 });

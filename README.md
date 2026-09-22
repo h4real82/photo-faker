@@ -121,11 +121,13 @@ photo-faker/
 
 ## 🧠 Unterstützte KI-Modelle im Detail
 
-| Modell | Space | Typ | Besonderheit |
+| Modell | Space | Typ / Tag | Besonderheit |
 | :--- | :--- | :--- | :--- |
-| **InstantID (SDXL)** | `InstantX/InstantID` | Diffusionsmodell (SDXL + IP-Adapter) | Hohe Flexibilität: Erschafft völlig neu generierte Szenen passend zum Prompt mit Gesichtserhalt. |
-| **PhotoMaker V2** | `TencentARC/PhotoMaker-V2` | Identitäts-Synthese | Fokus auf extrem konsistente Porträts und realistische Hautstrukturen. |
-| **Direct FaceSwap** | `Dentro/face-swap` | Neuronaler Gesichts-Tausch | Schnelligkeit: 1:1 Übertragung in ~8s ohne ZeroGPU-Quota-Einschränkung. |
+| **InstantID (SDXL)** | `InstantX/InstantID` | **Gesichtserhalt 1:1** | Strikter biometrischer Gesichtserhalt auf neu generierte Szenen. |
+| **FLUX.1 Schnell** | `black-forest-labs/FLUX.1-schnell` | **Beste Fotoqualität (Neues Gesicht)** | 12B Next-Gen Diffusionsmodell für höchste fotografische Güte und Lichtstimmung. |
+| **Qwen-Image 2.1** | `Qwen/Qwen-Image-2.1` | **Top Textur & Details (Neues Gesicht)** | Alibaba Cloud Vision-KI für feinste Mikro-Poren, Hauttexturen und Schärfe. |
+| **PhotoMaker V2** | `TencentARC/PhotoMaker-V2` | **Gute Ähnlichkeit & Style** | Konsistente Gesichts-Identität für hochauflösende Porträtaufnahmen. |
+| **SDXL Lightning** | `ByteDance/SDXL-Lightning` | **Ultra-schnell (Ähnliche Züge)** | ByteDance 4-Step Turbo-Inferenz für sekundenschnelles Prototyping. |
 
 ---
 

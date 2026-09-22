@@ -20,6 +20,7 @@ import {
   Layers,
   Wand2,
   Dices,
+  ChevronDown,
 } from "lucide-react";
 
 interface Motif {
@@ -67,9 +68,9 @@ const MOTIFS: Motif[] = [
 ];
 
 interface AIModel {
-  id: "instantid" | "photomaker" | "faceswap";
+  id: "instantid" | "flux" | "qwen" | "photomaker" | "lightning";
   name: string;
-  badge: string;
+  tag: string;
   badgeColor: string;
   desc: string;
   speed: string;
@@ -79,26 +80,42 @@ const AI_MODELS: AIModel[] = [
   {
     id: "instantid",
     name: "InstantID (SDXL)",
-    badge: "NEUE SZENEN",
+    tag: "Gesichtserhalt 1:1",
     badgeColor: "bg-violet-900/60 text-violet-300 border-violet-700/50",
-    desc: "Generiert neue Szenen passend zum Prompt mit Gesichtserhalt.",
+    desc: "Strikter biometrischer Gesichtserhalt auf neu generierte Szenen.",
     speed: "~16s",
+  },
+  {
+    id: "flux",
+    name: "FLUX.1 Schnell",
+    tag: "Beste Fotoqualität (Neues Gesicht)",
+    badgeColor: "bg-blue-900/60 text-blue-300 border-blue-700/50",
+    desc: "12B Next-Gen Diffusionsmodell für höchste fotografische Güte.",
+    speed: "~6s",
+  },
+  {
+    id: "qwen",
+    name: "Qwen-Image 2.1",
+    tag: "Top Textur & Details (Neues Gesicht)",
+    badgeColor: "bg-purple-900/60 text-purple-300 border-purple-700/50",
+    desc: "Hervorragende Hauttexturen, Poren und natürliche Schattenbildung.",
+    speed: "~12s",
   },
   {
     id: "photomaker",
     name: "PhotoMaker V2",
-    badge: "PORTRAIT ID",
+    tag: "Gute Ähnlichkeit & Style",
     badgeColor: "bg-pink-900/60 text-pink-300 border-pink-700/50",
-    desc: "Hochauflösende Porträts mit konsistenter Identität.",
-    speed: "~20s",
+    desc: "Konsistente Gesichts-Identität für hochauflösende Porträts.",
+    speed: "~18s",
   },
   {
-    id: "faceswap",
-    name: "Direct FaceSwap",
-    badge: "OHNE LIMIT • SCHNELL",
-    badgeColor: "bg-emerald-900/60 text-emerald-300 border-emerald-700/50",
-    desc: "Schneller 1:1 Gesichts-Tausch auf das Ziel-Shooting.",
-    speed: "~8s",
+    id: "lightning",
+    name: "SDXL Lightning",
+    tag: "Ultra-schnell (Ähnliche Züge)",
+    badgeColor: "bg-amber-900/60 text-amber-300 border-amber-700/50",
+    desc: "ByteDance 4-Step Turbo-Inferenz für sekundenschnelle Generierung.",
+    speed: "~4s",
   },
 ];
 
@@ -132,6 +149,8 @@ export default function PhotoFakerStudio() {
     "Casual coffee shop window seat on a rainy afternoon"
   );
   const [selectedModel, setSelectedModel] = useState<string>("instantid");
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
+  const [freeGenerations, setFreeGenerations] = useState<number>(10);
   const [identityLock, setIdentityLock] = useState<number>(100);
   const [aspectRatio, setAspectRatio] = useState<string>("4:5");
   const [batchSize, setBatchSize] = useState<number>(2);
@@ -148,6 +167,19 @@ export default function PhotoFakerStudio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const splitContainerRef = useRef<HTMLDivElement>(null);
+
+  // Kontingent aus LocalStorage laden
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("photo_faker_quota");
+      if (stored !== null) {
+        const val = parseInt(stored, 10);
+        if (!isNaN(val)) setFreeGenerations(val);
+      } else {
+        localStorage.setItem("photo_faker_quota", "10");
+      }
+    }
+  }, []);
 
   // Zufällige realistische Szene auswählen
   const handleRandomPrompt = () => {
@@ -189,11 +221,21 @@ export default function PhotoFakerStudio() {
 
   // KI-Generierung auslösen
   const handleRender = async () => {
-    if (!faceImage) {
-      alert("Bitte lade zuerst ein Gesichtsfoto in den Face Vault hoch!");
+    const requiresFace = selectedModel === "instantid" || selectedModel === "photomaker";
+    if (requiresFace && !faceImage) {
+      alert("Für dieses Modell wird ein Referenzgesicht im Face Vault benötigt!");
       fileInputRef.current?.click();
       return;
     }
+
+    // Kontingent verringern & persistieren
+    setFreeGenerations((prev) => {
+      const nextVal = Math.max(0, prev - 1);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("photo_faker_quota", nextVal.toString());
+      }
+      return nextVal;
+    });
 
     setIsRendering(true);
     try {
@@ -201,10 +243,11 @@ export default function PhotoFakerStudio() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          modelId: selectedModel,
+          image: faceImage,
           faceImageBase64: faceImage,
           motifId: selectedMotif,
           prompt: prompt,
-          modelId: selectedModel,
           batchCount: batchSize,
           identityStrength: identityLock,
           aspectRatio: aspectRatio,
@@ -362,9 +405,24 @@ export default function PhotoFakerStudio() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-xs font-medium text-amber-300 bg-amber-950/50 px-3 py-1 rounded-full border border-amber-800/60">
-            100% KOSTENLOS (UNBEGRENZT)
-          </span>
+          {/* Kontingent-Anzeige */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1b1c24] border border-[#2e303b] text-xs font-mono shadow-sm">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                freeGenerations > 0
+                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                  : "bg-red-500"
+              }`}
+            ></span>
+            <span className="text-zinc-400 hidden sm:inline">Kostenlose Generierungen:</span>
+            <span
+              className={`font-bold ${
+                freeGenerations > 0 ? "text-amber-300" : "text-red-400"
+              }`}
+            >
+              {freeGenerations} / 10
+            </span>
+          </div>
 
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -634,40 +692,106 @@ export default function PhotoFakerStudio() {
         {/* Mitte: Canvas & Vorher/Nachher Live-View */}
         <section className="lg:col-span-6 p-4 md:p-6 flex flex-col justify-between bg-[#0e0f13] overflow-y-auto max-h-[calc(100vh-100px)]">
           <div>
-            {/* KI-Modell Auswahlelement (Segmented Control) */}
-            <div className="mb-4 p-2 rounded-2xl bg-[#16171d] border border-[#2d2e35] shadow-lg">
-              <div className="flex items-center justify-between px-2 mb-2">
+            {/* KI-Modell Auswahlelement (Modernes Custom Select / Dropdown) */}
+            <div className="mb-4 relative">
+              <div className="flex items-center justify-between mb-2 px-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
                   <Wand2 className="w-3.5 h-3.5 text-violet-400" />
                   KI-Modell auswählen
                 </span>
-                <span className="text-[10px] font-mono text-zinc-400 bg-[#0e0f13] px-2 py-0.5 rounded-full border border-zinc-800">
-                  Hugging Face Serverless
+                <span className="text-[10px] font-mono text-zinc-400 bg-[#16171d] px-2.5 py-0.5 rounded-full border border-zinc-800">
+                  Hugging Face Serverless (5 Modelle)
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {AI_MODELS.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setSelectedModel(m.id)}
-                    className={`p-2.5 rounded-xl text-left transition flex flex-col justify-between border ${
-                      selectedModel === m.id
-                        ? "bg-violet-950/70 border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.3)] ring-1 ring-violet-500/50"
-                        : "bg-[#1b1c24] border-[#2e303b] hover:border-zinc-500 opacity-80 hover:opacity-100"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-bold text-xs text-white truncate">{m.name}</span>
-                      <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border ${m.badgeColor} shrink-0`}>
-                        {m.badge}
-                      </span>
+
+              {/* Select Trigger */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                  className="w-full p-3.5 rounded-2xl bg-[#16171d] border border-[#2d2e35] hover:border-violet-500/60 shadow-lg flex items-center justify-between transition group text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 font-bold text-xs shrink-0">
+                      <Wand2 className="w-4 h-4" />
                     </div>
-                    <p className="text-[10px] text-zinc-400 leading-snug line-clamp-2">
-                      {m.desc}
-                    </p>
-                  </button>
-                ))}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-white">
+                          {AI_MODELS.find((m) => m.id === selectedModel)?.name}
+                        </span>
+                        <span
+                          className={`text-[9px] font-mono px-2 py-0.5 rounded-md border font-semibold ${
+                            AI_MODELS.find((m) => m.id === selectedModel)?.badgeColor
+                          }`}
+                        >
+                          {AI_MODELS.find((m) => m.id === selectedModel)?.tag}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                        {AI_MODELS.find((m) => m.id === selectedModel)?.desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] font-mono text-zinc-500 bg-[#0e0f13] px-2 py-0.5 rounded-md border border-zinc-800 hidden sm:inline">
+                      {AI_MODELS.find((m) => m.id === selectedModel)?.speed}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-zinc-400 group-hover:text-white transition-transform duration-200 ${
+                        isModelDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isModelDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-40 bg-[#16171d] border border-[#2d2e35] rounded-2xl shadow-2xl overflow-hidden divide-y divide-[#22232d] animate-in fade-in zoom-in-95 duration-150">
+                    {AI_MODELS.map((m) => (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          setSelectedModel(m.id);
+                          setIsModelDropdownOpen(false);
+                        }}
+                        className={`p-3.5 cursor-pointer transition flex items-center justify-between ${
+                          selectedModel === m.id
+                            ? "bg-violet-950/40 text-white"
+                            : "hover:bg-[#1f2029] text-zinc-300"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-white">{m.name}</span>
+                            <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border ${m.badgeColor}`}>
+                              {m.tag}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-zinc-400">{m.desc}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] font-mono text-zinc-500">{m.speed}</span>
+                          {selectedModel === m.id && (
+                            <Check className="w-4 h-4 text-violet-400" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
+              {/* Dynamischer Biometrie-Warnhinweis */}
+              {selectedModel !== "instantid" && (
+                <div className="mt-2.5 p-3 rounded-xl bg-amber-950/40 border border-amber-700/50 text-amber-300 text-xs flex items-start gap-2.5 shadow-sm">
+                  <span className="text-base shrink-0 leading-none">⚠️</span>
+                  <div className="leading-relaxed">
+                    <span className="font-semibold block text-amber-200">Biometrie-Hinweis:</span>
+                    <span>Dieses Modell optimiert Fotorealismus und Lichtstimmung. Die Gesichtszüge stimmen nicht 1:1 mit deinem Upload überein.</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Viewfinder Header */}
@@ -699,11 +823,15 @@ export default function PhotoFakerStudio() {
                     Modell: {AI_MODELS.find((m) => m.id === selectedModel)?.name}
                   </div>
                   <span className="text-xs text-zinc-400">
-                    {selectedModel === "faceswap"
-                      ? "Direct FaceSwap überträgt deine Gesichtszüge auf das Ziel-Shooting (~8-12s)."
+                    {selectedModel === "instantid"
+                      ? `InstantID generiert ${batchSize} photorealistische${batchSize > 1 ? "s" : ""} Porträt${batchSize > 1 ? "s" : ""} mit 1:1 Gesichtserhalt.`
+                      : selectedModel === "flux"
+                      ? "FLUX.1 Schnell berechnet ultra-realistische Kamera-Beleuchtung und Spitzen-Fotoqualität."
+                      : selectedModel === "qwen"
+                      ? "Qwen-Image 2.1 synthetisiert feine Mikro-Poren und stimmige Lichtreflexionen."
                       : selectedModel === "photomaker"
                       ? "PhotoMaker V2 synthetisiert ein konsistentes High-Fashion Porträt."
-                      : `InstantID generiert ${batchSize} photorealistische${batchSize > 1 ? "s" : ""} Shooting-Porträt${batchSize > 1 ? "s" : ""} mit authentischer Hauttextur.`}
+                      : "SDXL Lightning rendert in 4 Turbo-Inferenzschritten."}
                   </span>
 
                   {/* Warteschlangen-Hinweis */}
