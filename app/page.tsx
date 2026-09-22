@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 
 interface AIModel {
-  id: "pulid" | "instantid" | "flux" | "qwen" | "photomaker";
+  id: "pulid" | "instantid" | "flux" | "qwen" | "photomaker" | "faceswap";
   name: string;
   tag: string;
   badgeColor: string;
@@ -43,11 +43,11 @@ interface AIModel {
 const AI_MODELS: AIModel[] = [
   {
     id: "pulid",
-    name: "PuLID-FLUX (2-Pass)",
+    name: "PuLID-FLUX",
     tag: "EMPFOHLEN • Gesichtserhalt + FLUX",
     badgeColor: "bg-emerald-900/60 text-emerald-300 border-emerald-700/50",
-    desc: "FLUX-basierte Szene mit eingebetteter Gesichtsidentität + Face-Swap Refinement + CodeFormer.",
-    speed: "~25s",
+    desc: "FLUX.1 Modell mit striktem biometrischen Gesichtserhalt und fotorealistischer Hauttextur.",
+    speed: "~15s",
     requiresFace: true,
   },
   {
@@ -56,7 +56,16 @@ const AI_MODELS: AIModel[] = [
     tag: "Gesichtserhalt 1:1",
     badgeColor: "bg-violet-900/60 text-violet-300 border-violet-700/50",
     desc: "Strikter biometrischer Gesichtserhalt auf neu generierte Szenen.",
-    speed: "~20s",
+    speed: "~12s",
+    requiresFace: true,
+  },
+  {
+    id: "faceswap",
+    name: "Direct FaceSwap",
+    tag: "Klassischer Gesichts-Tausch",
+    badgeColor: "bg-amber-900/60 text-amber-300 border-amber-700/50",
+    desc: "Direkter 1:1 Gesichts-Tausch auf eine generierte Zielszene.",
+    speed: "~8s",
     requiresFace: true,
   },
   {
@@ -64,8 +73,8 @@ const AI_MODELS: AIModel[] = [
     name: "FLUX.1 [dev]",
     tag: "28-Step Pro HQ (Neues Gesicht)",
     badgeColor: "bg-blue-900/60 text-blue-300 border-blue-700/50",
-    desc: "High-Fidelity 12B Dev Modell. Kein Gesichtserhalt — generiert neue Gesichter.",
-    speed: "~16s",
+    desc: "High-Fidelity 12B Dev Modell. Generiert neue fotorealistische Gesichter.",
+    speed: "~10s",
     requiresFace: false,
   },
   {
@@ -73,8 +82,8 @@ const AI_MODELS: AIModel[] = [
     name: "Qwen-Image 2.1",
     tag: "Top Textur & Details (Neues Gesicht)",
     badgeColor: "bg-purple-900/60 text-purple-300 border-purple-700/50",
-    desc: "Hervorragende Hauttexturen und Schattenbildung. Kein Gesichtserhalt.",
-    speed: "~12s",
+    desc: "Hervorragende Hauttexturen und Lichtstimmung. Kein Gesichtserhalt.",
+    speed: "~10s",
     requiresFace: false,
   },
   {
@@ -83,7 +92,7 @@ const AI_MODELS: AIModel[] = [
     tag: "Gute Ähnlichkeit & Style",
     badgeColor: "bg-pink-900/60 text-pink-300 border-pink-700/50",
     desc: "Konsistente Gesichts-Identität für hochauflösende Porträts.",
-    speed: "~22s",
+    speed: "~14s",
     requiresFace: true,
   },
 ];
@@ -410,7 +419,7 @@ export default function PhotoFakerStudio() {
     setIsTokenModalOpen(false);
   };
 
-  // Zufällige realistische Szene auswählen (optional nach Kategorie gefiltert)
+  // Zufällige realistische Szene auswählen
   const handleRandomPrompt = (cat?: string) => {
     const categoryToUse = cat || selectedCategory;
     const pool =
@@ -551,7 +560,6 @@ export default function PhotoFakerStudio() {
         });
         return;
       } catch (e) {
-        // Fallback to normal download
         downloadFallback(currentUrl);
       }
     } else {
@@ -633,7 +641,7 @@ export default function PhotoFakerStudio() {
                 PHOTO FAKER
               </span>
               <span className="text-[9px] tracking-widest text-violet-400 font-mono -mt-0.5 uppercase">
-                2-PASS PIPELINE PRO
+                HIGH-FIDELITY STUDIO PRO
               </span>
             </div>
             <span className="hidden sm:inline text-[10px] tracking-widest text-violet-300 font-mono px-2 py-0.5 rounded-full bg-violet-950/70 border border-violet-800/60 ml-1">
@@ -726,7 +734,7 @@ export default function PhotoFakerStudio() {
 
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/50 border border-emerald-800/40 text-emerald-300 text-[11px] font-mono">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>3-Pass Pipeline: PuLID → Face-Swap → CodeFormer</span>
+            <span>Optimiertes High-Fidelity Rendering</span>
           </div>
         </div>
 
@@ -738,7 +746,7 @@ export default function PhotoFakerStudio() {
         </div>
       </div>
 
-      {/* 2-Spalten Workbench (statt 3-Spalten) */}
+      {/* 2-Spalten Workbench */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
         {/* Linke Leiste: Face Vault & Einstellungen */}
         <aside className="lg:col-span-3 border-r border-[#2d2e35] p-5 bg-[#16171d] space-y-6 overflow-y-auto max-h-[calc(100vh-100px)]">
@@ -821,7 +829,7 @@ export default function PhotoFakerStudio() {
             )}
           </div>
 
-          {/* KI-Modell Auswahl (moved from center) */}
+          {/* KI-Modell Auswahl */}
           <div className="space-y-3 pt-4 border-t border-[#2d2e35]">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
@@ -902,7 +910,7 @@ export default function PhotoFakerStudio() {
               <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-700/50 text-amber-300 text-[11px] flex items-start gap-2 shadow-sm">
                 <span className="text-sm shrink-0 leading-none">⚠️</span>
                 <span className="leading-relaxed">
-                  Dieses Modell generiert ein <strong>neues Gesicht</strong>. Für biometrischen Gesichtserhalt wähle PuLID-FLUX, InstantID oder PhotoMaker.
+                  Dieses Modell generiert ein <strong>neues Gesicht</strong>. Für biometrischen Gesichtserhalt wähle PuLID-FLUX, InstantID, Direct FaceSwap oder PhotoMaker.
                 </span>
               </div>
             )}
@@ -1000,7 +1008,7 @@ export default function PhotoFakerStudio() {
             </div>
           </div>
 
-          {/* DSGVO Card (moved from right sidebar) */}
+          {/* DSGVO Card */}
           <div className="pt-4 border-t border-[#2d2e35]">
             <div className="p-3.5 rounded-xl bg-[#121317] border border-[#2d2e35] text-[10px] text-zinc-400 space-y-1.5">
               <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
@@ -1015,7 +1023,7 @@ export default function PhotoFakerStudio() {
           </div>
         </aside>
 
-        {/* Hauptbereich: Canvas + Prompt + Export (volle Breite, kein rechtes Panel) */}
+        {/* Hauptbereich: Canvas + Prompt + Export */}
         <section className="lg:col-span-9 p-4 md:p-6 flex flex-col justify-between bg-[#0e0f13] overflow-y-auto max-h-[calc(100vh-100px)]">
           <div>
             {/* Error Banner with ZeroGPU Action */}
@@ -1086,39 +1094,10 @@ export default function PhotoFakerStudio() {
                     <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-full"></div>
                   </div>
                   <span className="text-base font-bold tracking-wide text-white">
-                    3-Pass Pipeline wird gerendert...
+                    High-Fidelity Rendering läuft...
                   </span>
                   <div className="px-3 py-1 rounded-full bg-violet-950/70 border border-violet-700/60 text-xs font-mono text-violet-300 font-semibold">
                     Modell: {AI_MODELS.find((m) => m.id === selectedModel)?.name}
-                  </div>
-
-                  {/* Pipeline Steps Indicator */}
-                  <div className="w-full max-w-xs space-y-2 mt-2">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-5 h-5 rounded-full bg-violet-600/60 flex items-center justify-center text-[9px] font-bold text-white">1</div>
-                      <span className="text-zinc-300">Szenen-Generierung ({AI_MODELS.find((m) => m.id === selectedModel)?.name})</span>
-                    </div>
-                    {AI_MODELS.find((m) => m.id === selectedModel)?.requiresFace && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className="w-5 h-5 rounded-full bg-pink-600/60 flex items-center justify-center text-[9px] font-bold text-white">2</div>
-                        <span className="text-zinc-300">Biometrischer Face-Swap</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-5 h-5 rounded-full bg-emerald-600/60 flex items-center justify-center text-[9px] font-bold text-white">3</div>
-                      <span className="text-zinc-300">CodeFormer Textur-Restauration</span>
-                    </div>
-                  </div>
-
-                  {/* Warteschlangen-Hinweis */}
-                  <div className="mt-2 p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/40 text-[11px] text-amber-300/90 leading-relaxed flex items-start gap-2 text-left">
-                    <span className="text-sm shrink-0">⏳</span>
-                    <div>
-                      <span className="font-semibold block">Hugging Face Cloud-Warteschlange:</span>
-                      <span>
-                        Bei hoher Serverauslastung kann es in der Warteschlange einige Sekunden dauern. Die Verbindung bleibt aktiv.
-                      </span>
-                    </div>
                   </div>
 
                   <div className="w-48 bg-zinc-800 rounded-full h-1.5 overflow-hidden mt-2">
@@ -1127,7 +1106,7 @@ export default function PhotoFakerStudio() {
                 </div>
               ) : generatedImages.length > 0 ? (
                 <div className="relative w-full h-full">
-                  {/* Generiertes Render-Bild (rechts bzw. Vollbild) */}
+                  {/* Generiertes Render-Bild */}
                   <img
                     src={generatedImages[activeImageIndex]}
                     alt="Generiertes Porträt"
@@ -1161,25 +1140,6 @@ export default function PhotoFakerStudio() {
                   <div className="absolute top-3 right-3 bg-violet-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-violet-300 border border-violet-800/60">
                     {AI_MODELS.find((m) => m.id === selectedModel)?.name.toUpperCase() || "KI"} RENDER
                   </div>
-
-                  {/* Pipeline info badge */}
-                  {pipelineInfo && (
-                    <div className="absolute bottom-3 left-3 flex gap-1.5">
-                      <span className="px-2 py-0.5 rounded-full bg-violet-950/80 backdrop-blur-md text-[9px] font-mono text-violet-300 border border-violet-800/40">
-                        Pass 1: {pipelineInfo.pass1}
-                      </span>
-                      {pipelineInfo.pass2 !== "skipped" && (
-                        <span className="px-2 py-0.5 rounded-full bg-pink-950/80 backdrop-blur-md text-[9px] font-mono text-pink-300 border border-pink-800/40">
-                          Pass 2: Face-Swap ✓
-                        </span>
-                      )}
-                      {pipelineInfo.pass3 !== "skipped" && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 backdrop-blur-md text-[9px] font-mono text-emerald-300 border border-emerald-800/40">
-                          Pass 3: CodeFormer ✓
-                        </span>
-                      )}
-                    </div>
-                  )}
 
                   {/* Split Handle */}
                   {faceImage && (
@@ -1262,7 +1222,7 @@ export default function PhotoFakerStudio() {
               </div>
             )}
 
-            {/* Export-Aktionen (moved from right sidebar) */}
+            {/* Export-Aktionen */}
             {generatedImages.length > 0 && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
@@ -1382,7 +1342,7 @@ export default function PhotoFakerStudio() {
               {isRendering ? (
                 <>
                   <RefreshCw className="w-5 h-5 animate-spin" />
-                  <span>3-PASS PIPELINE LÄUFT...</span>
+                  <span>RENDERING LÄUFT...</span>
                 </>
               ) : (
                 <>
@@ -1401,12 +1361,12 @@ export default function PhotoFakerStudio() {
       <footer className="w-full bg-[#0d0e12] border-t border-[#22232d] px-4 md:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
         <div className="flex items-center gap-2">
           <span className="font-bold text-zinc-300">PHOTO FAKER</span>
-          <span>• 2-Pass Pipeline Pro Studio v5.0</span>
+          <span>• High-Fidelity Studio Pro v5.0</span>
         </div>
         <div className="flex items-center gap-4 text-[11px]">
           <span>Zero-Retention Privacy Verified</span>
           <span>•</span>
-          <span>PuLID-FLUX → Face-Swap → CodeFormer</span>
+          <span>High-Fidelity AI Generation Engine</span>
         </div>
         <div className="text-[11px]">
           © 2025 Photo Faker Studio. High-Fidelity Generative Portraiture.
