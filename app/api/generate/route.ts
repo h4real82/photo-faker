@@ -10,29 +10,34 @@ interface MotifConfig {
   negative_prompt: string;
 }
 
-const COMMON_NEGATIVE =
-  "painting, drawing, illustration, sketch, watercolor, ink sketch, vector, cartoon, anime, 3d render, cgi, digital art, plastic skin, airbrushed, doll, smooth skin, artificial, canvas, oil painting, fake, over-processed, doll-like, deformed eyes, bad anatomy, blur, low quality, deformed, disfigured, extra limbs, ugly, oversaturated, lowres, text, watermark";
+// Zwingender negativer Prompt für maximalen Fotorealismus
+const MANDATORY_NEGATIVE_PROMPT =
+  "painting, drawing, illustration, cartoon, anime, 3d render, cgi, smooth skin, airbrushed, oversaturated, blurry, bad anatomy, deformed";
+
+// Automatischer Photo-Prompt-Booster für Porträt-Schärfe und echte Kameratextur
+const PHOTO_PROMPT_BOOSTER =
+  "raw candid 35mm photo, detailed skin texture, pores, authentic lighting, natural shadows, shot on Sony A7 IV, 85mm f/1.4 lens, photographic, highly detailed, photorealistic";
 
 const MOTIFS: Record<string, MotifConfig> = {
   "paris-fashion": {
     prompt:
-      "raw authentic photograph of a person, high fashion editorial photoshoot at Pont Alexandre III Paris, wearing a luxury haute couture beige oversized trench coat, soft dramatic golden hour sunset backlighting, realistic skin texture with visible pores and natural imperfections, natural catchlight in eyes, Hasselblad 85mm f/1.4 photography, sharp focus on face, creamy bokeh backdrop, Kodak Portra 400 color grading, 8k resolution, cinematic, photorealistic",
-    negative_prompt: COMMON_NEGATIVE,
+      "high fashion editorial photoshoot at Pont Alexandre III Paris, wearing a luxury haute couture beige oversized trench coat, soft dramatic golden hour sunset backlighting, natural catchlight in eyes, creamy bokeh backdrop, Kodak Portra 400 color grading",
+    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
   "neon-noir": {
     prompt:
-      "raw authentic photograph of a person, cinematic high-fashion nocturnal portrait in rainy Tokyo Shinjuku street, wearing a sleek wet black leather motorcycle jacket, atmospheric moody street reflections, subtle magenta and cyan rim light highlighting jawline and cheekbones, realistic skin texture with fine pores, sharp focus on eyes, shallow depth of field, 35mm film photography, Leica M11, photorealistic, 8k uhd",
-    negative_prompt: COMMON_NEGATIVE,
+      "cinematic high-fashion nocturnal portrait in rainy Tokyo Shinjuku street, wearing a sleek wet black leather motorcycle jacket, atmospheric moody street reflections, subtle magenta and cyan rim light highlighting jawline and cheekbones",
+    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
   "monaco-yacht": {
     prompt:
-      "raw authentic photograph of a person, luxury editorial lifestyle photoshoot on the teak deck of a private superyacht in Monaco harbor, wearing an unbuttoned crisp white linen shirt, Mediterranean bright summer sun, soft warm fill light, natural relaxed smile, natural skin pores and realistic skin texture, sun-kissed look, soft ocean bokeh, shot on Sony A7R V 85mm f/1.4, photorealistic, Vogue editorial",
-    negative_prompt: COMMON_NEGATIVE,
+      "luxury editorial lifestyle photoshoot on the teak deck of a private superyacht in Monaco harbor, wearing an unbuttoned crisp white linen shirt, Mediterranean bright summer sun, soft warm fill light, natural relaxed smile, sun-kissed look, soft ocean bokeh",
+    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
   "met-gala": {
     prompt:
-      "raw authentic photograph of a person, glamorous celebrity red carpet entrance at Met Gala, dressed in an opulent dark emerald velvet tailored evening jacket with gemstone accents, dramatic paparazzi flash photography, high contrast lighting, natural skin texture, realistic facial features and skin pores, sharp focus, magazine cover quality, Kodak Ektar 100, photorealistic, 8k resolution",
-    negative_prompt: COMMON_NEGATIVE,
+      "glamorous celebrity red carpet entrance at Met Gala, dressed in an opulent dark emerald velvet tailored evening jacket with gemstone accents, dramatic paparazzi flash photography, high contrast lighting",
+    negative_prompt: MANDATORY_NEGATIVE_PROMPT,
   },
 };
 
@@ -42,6 +47,7 @@ export async function POST(req: NextRequest) {
     const {
       faceImageBase64,
       motifId = "paris-fashion",
+      prompt: userPrompt,
       modelId = "instantid",
       batchCount = 2,
       identityStrength = 85,
@@ -56,6 +62,15 @@ export async function POST(req: NextRequest) {
     }
 
     const motif = MOTIFS[motifId] || MOTIFS["paris-fashion"];
+
+    // Basis-Prompt ermitteln: Freitext-Prompt (oder Zufallsszene) hat Vorrang vor Preset
+    const basePrompt =
+      typeof userPrompt === "string" && userPrompt.trim().length > 0
+        ? userPrompt.trim()
+        : motif.prompt;
+
+    // Automatischer Photo-Prompt-Booster für maximalen Fotorealismus
+    const boostedPrompt = `${basePrompt}, ${PHOTO_PROMPT_BOOSTER}`;
 
     // Gesichtsdaten in File konvertieren (flüchtig im RAM / Zero-Retention)
     let file: File;
@@ -94,7 +109,7 @@ export async function POST(req: NextRequest) {
         );
 
         // PhotoMaker benötigt den Trigger "img" im Prompt
-        const pmPrompt = `a high-fashion photorealistic portrait of a person img, ${motif.prompt}`;
+        const pmPrompt = `${basePrompt} img, ${PHOTO_PROMPT_BOOSTER}`;
         const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 2);
 
         const aspectMap: Record<string, string> = {
@@ -112,7 +127,7 @@ export async function POST(req: NextRequest) {
         const result = await pmClient.predict(endpoint, {
           upload_images: [handle_file(file)],
           prompt: pmPrompt,
-          negative_prompt: motif.negative_prompt,
+          negative_prompt: MANDATORY_NEGATIVE_PROMPT,
           aspect_ratio_name: aspect,
           style_name: "Photographic (Default)",
           num_steps: 30,
@@ -210,8 +225,8 @@ export async function POST(req: NextRequest) {
             const result = await idClient.predict("/generate_image", {
               face_image_path: handle_file(file),
               pose_image_path: null,
-              prompt: motif.prompt,
-              negative_prompt: motif.negative_prompt,
+              prompt: boostedPrompt,
+              negative_prompt: MANDATORY_NEGATIVE_PROMPT,
               style_name: "(No style)",
               num_steps: 30,
               identitynet_strength_ratio: identityRatio,

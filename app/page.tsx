@@ -19,6 +19,7 @@ import {
   Trash2,
   Layers,
   Wand2,
+  Dices,
 } from "lucide-react";
 
 interface Motif {
@@ -101,9 +102,35 @@ const AI_MODELS: AIModel[] = [
   },
 ];
 
+const RANDOM_SCENES: string[] = [
+  "Casual coffee shop window seat on a rainy afternoon",
+  "Walking down a neon-lit Tokyo street at night",
+  "Golden hour portrait on a modern concrete rooftop terrace",
+  "Black and white dramatic vintage jazz bar scene",
+  "Cozy reading nook in an antique sunlit library with wooden bookshelves",
+  "Sun-drenched Mediterranean coastal cafe overlooking azure waters",
+  "Industrial loft art studio filled with warm natural sunlight",
+  "High-fashion Parisian boulevard sidewalk with classic Haussmann architecture",
+  "Underground subway platform in New York with subtle cinematic motion blur",
+  "Rooftop infinity pool overlook during vibrant tropical sunset",
+  "Intimate candlelit dinner table at a rustic Italian trattoria",
+  "Serene desert dunes at twilight with cool blue and golden ambient sky",
+  "Modern minimalist art gallery standing next to architectural sculptures",
+  "Autumn park bench covered in amber maple leaves in Central Park",
+  "Chic speakeasy lounge with dark green velvet booths and warm amber glass",
+  "Bustling street food market in Taipei with steaming warm lanterns",
+  "Lakeside wooden pier in the Swiss Alps on a calm crisp morning",
+  "Cozy vinyl record store browsing vintage album crates",
+  "Bright sunlit greenhouse conservatory surrounded by lush tropical plants",
+  "Nordic forest cabin deck wrapped in cozy wool surrounded by misty pine trees",
+];
+
 export default function PhotoFakerStudio() {
   const [faceImage, setFaceImage] = useState<string | null>(null);
   const [selectedMotif, setSelectedMotif] = useState<string>("paris-fashion");
+  const [prompt, setPrompt] = useState<string>(
+    "Casual coffee shop window seat on a rainy afternoon"
+  );
   const [selectedModel, setSelectedModel] = useState<string>("instantid");
   const [identityLock, setIdentityLock] = useState<number>(100);
   const [aspectRatio, setAspectRatio] = useState<string>("4:5");
@@ -121,6 +148,15 @@ export default function PhotoFakerStudio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const splitContainerRef = useRef<HTMLDivElement>(null);
+
+  // Zufällige realistische Szene auswählen
+  const handleRandomPrompt = () => {
+    let nextIndex = Math.floor(Math.random() * RANDOM_SCENES.length);
+    if (RANDOM_SCENES[nextIndex] === prompt && RANDOM_SCENES.length > 1) {
+      nextIndex = (nextIndex + 1) % RANDOM_SCENES.length;
+    }
+    setPrompt(RANDOM_SCENES[nextIndex]);
+  };
 
   // File Upload Handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,6 +203,7 @@ export default function PhotoFakerStudio() {
         body: JSON.stringify({
           faceImageBase64: faceImage,
           motifId: selectedMotif,
+          prompt: prompt,
           modelId: selectedModel,
           batchCount: batchSize,
           identityStrength: identityLock,
@@ -803,6 +840,50 @@ export default function PhotoFakerStudio() {
             )}
           </div>
 
+            {/* Szene & Prompt-Editor mit Würfel-Button */}
+            <div className="mt-4 p-3.5 rounded-2xl bg-[#16171d] border border-[#2d2e35] shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Szene & Prompt-Editor
+                  </span>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800/50 text-emerald-400 font-semibold">
+                    Photo-Booster Aktiv
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRandomPrompt}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 hover:text-white border border-violet-500/40 text-xs font-semibold transition active:scale-95 group shadow-sm cursor-pointer"
+                  title="Zufällige fotorealistische Szene aus Pool wählen"
+                >
+                  <Dices className="w-4 h-4 text-amber-300 group-hover:rotate-180 transition-transform duration-300" />
+                  <span>Zufallsszene</span>
+                </button>
+              </div>
+
+              <div className="relative">
+                <textarea
+                  rows={2}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Beschreibe eine eigene Szene oder klicke auf 'Zufallsszene'..."
+                  className="w-full bg-[#101116] border border-[#2d2e35] focus:border-violet-500 rounded-xl p-3 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition resize-none leading-relaxed"
+                />
+              </div>
+
+              <div className="flex items-center justify-between mt-2 text-[10px] text-zinc-400">
+                <span className="flex items-center gap-1">
+                  <span className="text-amber-400">📸</span>
+                  <span>Fotografische Kamera-Keywords (Sony A7 IV, 85mm f/1.4) werden automatisch ergänzt.</span>
+                </span>
+                <span className="font-mono text-zinc-500 shrink-0 ml-2">
+                  {prompt.length} Zeichen
+                </span>
+              </div>
+            </div>
+
           {/* Render CTA Button */}
           <div className="mt-4">
             <button
@@ -845,7 +926,10 @@ export default function PhotoFakerStudio() {
               {MOTIFS.map((motif) => (
                 <div
                   key={motif.id}
-                  onClick={() => setSelectedMotif(motif.id)}
+                  onClick={() => {
+                    setSelectedMotif(motif.id);
+                    setPrompt(motif.desc);
+                  }}
                   className={`p-3.5 rounded-2xl border cursor-pointer transition ${
                     selectedMotif === motif.id
                       ? "bg-violet-950/40 border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.3)] scale-[1.01]"
