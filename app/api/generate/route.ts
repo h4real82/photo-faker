@@ -3,46 +3,36 @@ import { Client, handle_file } from "@gradio/client";
 
 export const maxDuration = 300;
 
-interface MotifConfig {
-  prompt: string;
-}
-
 // Zwingend vorgegebener globaler negativer Prompt
 const MANDATORY_NEGATIVE_PROMPT =
   "cartoon, 3d render, illustration, anime, CGI, airbrushed, plastic doll skin, waxy face, oversaturated, deformed hands, extra fingers, poorly drawn face, bad eyes, double chin, blurry, chromatic aberration, oversharpened, flat lighting, amateur selfie, bad composition, painting, drawing, bad quality";
 
-// Automatischer Photo-Prompt-Booster für Text-to-Image & Porträt-Generierung
+// Optimierter Photo-Prompt-Booster für maximalen Fotorealismus (Editorial-Suffix)
 const PHOTO_PROMPT_BOOSTER =
-  "raw candid 35mm photograph, natural lighting, shot on Sony A7 IV, detailed skin texture, photorealistic, 8k";
+  "authentic skin micro-texture, visible pores, sharp focused eyes, realistic lighting matching the environment, shot on 85mm lens, f/1.8, cinematic color grading, 8k resolution, raw photo aesthetic";
 
-const MOTIFS: Record<string, MotifConfig> = {
-  "paris-fashion": {
-    prompt:
-      "high fashion editorial photoshoot at Pont Alexandre III Paris, wearing a luxury haute couture beige oversized trench coat, soft dramatic golden hour sunset backlighting, natural catchlight in eyes, creamy bokeh backdrop, Kodak Portra 400 color grading",
-  },
-  "neon-noir": {
-    prompt:
-      "cinematic high-fashion nocturnal portrait in rainy Tokyo Shinjuku street, wearing a sleek wet black leather motorcycle jacket, atmospheric moody street reflections, subtle magenta and cyan rim light highlighting jawline and cheekbones",
-  },
-  "monaco-yacht": {
-    prompt:
-      "luxury editorial lifestyle photoshoot on the teak deck of a private superyacht in Monaco harbor, wearing an unbuttoned crisp white linen shirt, Mediterranean bright summer sun, soft warm fill light, natural relaxed smile, sun-kissed look, soft ocean bokeh",
-  },
-  "met-gala": {
-    prompt:
-      "glamorous celebrity red carpet entrance at Met Gala, dressed in an opulent dark emerald velvet tailored evening jacket with gemstone accents, dramatic paparazzi flash photography, high contrast lighting",
-  },
-};
-
-// Feste serverseitige Produktions-Parameter (UI-Bypass gegen Wachsgesichter & Verwaschungen)
+// Feste serverseitige Produktions-Parameter
 const PRODUCTION_CONFIG = {
-  instantid_max_strength: 0.70, // Hardcap bei 0.70 gegen Wachsgesichter
-  instantid_steps: 30, // Mindestens 28-35 Steps
-  instantid_guidance: 5.0, // SDXL Guidance 5.0
-  flux_model: "black-forest-labs/FLUX.1-dev", // Niemals 'schnell' für Porträts
-  flux_steps: 28, // 28 Inference Steps
-  flux_guidance: 3.5, // 3.0 - 3.5 Guidance Scale
-  codeformer_fidelity: 0.65, // Sweetspot für natürliche Hautporen & Iris
+  // PuLID-FLUX (Primary Pipeline)
+  pulid_id_weight: 0.70,        // Sweetspot für Gesichtserhalt ohne Wachseffekt
+  pulid_guidance: 4.0,           // Guidance Scale für PuLID-FLUX
+  pulid_steps: 28,               // 28 Inference Steps
+  pulid_start_step: 0,           // Start inserting ID from step 0
+  pulid_true_cfg: 1.0,           // True CFG scale
+  pulid_max_sequence_length: 512, // T5 max sequence length
+
+  // InstantID (SDXL)
+  instantid_max_strength: 0.68,  // Hardcap bei 0.68 gegen Wachsgesichter
+  instantid_steps: 30,           // Mindestens 28-35 Steps
+  instantid_guidance: 5.0,       // SDXL Guidance 5.0
+
+  // FLUX.1 [dev] (kein Gesichtserhalt)
+  flux_model: "black-forest-labs/FLUX.1-dev",
+  flux_steps: 28,
+  flux_guidance: 3.5,
+
+  // CodeFormer Stufe 3
+  codeformer_fidelity: 0.65,     // Sweetspot für natürliche Hautporen & Iris
 };
 
 function extractImageUrl(raw: any, spaceSlug: string): string {
@@ -65,17 +55,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       faceImageBase64,
-      motifId = "paris-fashion",
       prompt: userPrompt,
-      modelId = "instantid",
+      modelId = "pulid",
       batchCount = 2,
-      identityStrength = 70,
       aspectRatio = "4:5",
       clientHfToken,
     } = body;
 
     // Biometrie-Modelle verlangen zwingend ein Gesicht
-    const requiresFace = modelId === "instantid" || modelId === "photomaker";
+    const requiresFace = ["pulid", "instantid", "photomaker"].includes(modelId);
     if (requiresFace && !faceImageBase64) {
       return NextResponse.json(
         { error: "Für dieses Modell wird ein Referenzgesicht benötigt." },
@@ -83,13 +71,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const motif = MOTIFS[motifId] || MOTIFS["paris-fashion"];
-
-    // Basis-Prompt ermitteln: Freitext-Prompt (oder Zufallsszene) hat Vorrang vor Preset
+    // Basis-Prompt ermitteln: Freitext-Prompt ist zwingend
     let basePrompt =
       typeof userPrompt === "string" && userPrompt.trim().length > 0
         ? userPrompt.trim()
-        : motif.prompt;
+        : "High-end editorial photography, portrait of a person, natural lighting, photorealistic";
 
     // Ersetze {face_reference} Trigger-Platzhalter dynamisch nach Modell
     if (basePrompt.includes("{face_reference}")) {
@@ -148,19 +134,58 @@ export async function POST(req: NextRequest) {
     let images: string[] = [];
     let providerName = "";
 
+    // ═══════════════════════════════════════════════════════════════════
+    // STUFE 1: SZENEN-GENERIERUNG (Pass 1)
+    // ═══════════════════════════════════════════════════════════════════
+
     switch (modelId) {
-      // 1. InstantID (SDXL) - Strikter Gesichtserhalt mit festem Sweetspot-Lock (0.70)
+      // 1. PuLID-FLUX — Primary Pipeline: FLUX + Face Identity in einem Schritt
+      case "pulid": {
+        providerName = "PuLID-FLUX (2-Pass Pipeline) • 28 Steps";
+        if (!file) throw new Error("Kein Gesichtsfoto übergeben");
+
+        const pulidClient = await Client.connect("yanze/PuLID-FLUX", clientOptions);
+        const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 4);
+
+        for (let i = 0; i < targetCount; i++) {
+          try {
+            const seed = Math.floor(Math.random() * 2147483647);
+            const result = await pulidClient.predict("/generate_image", {
+              prompt: boostedPrompt,
+              id_image: handle_file(file),
+              start_step: PRODUCTION_CONFIG.pulid_start_step,
+              guidance: PRODUCTION_CONFIG.pulid_guidance,
+              seed: String(seed),
+              true_cfg: PRODUCTION_CONFIG.pulid_true_cfg,
+              width: width,
+              height: height,
+              num_steps: PRODUCTION_CONFIG.pulid_steps,
+              id_weight: PRODUCTION_CONFIG.pulid_id_weight,
+              neg_prompt: MANDATORY_NEGATIVE_PROMPT,
+              timestep_to_start_cfg: 1,
+              max_sequence_length: PRODUCTION_CONFIG.pulid_max_sequence_length,
+            });
+
+            const imgUrl = extractImageUrl((result as any)?.data?.[0], "yanze/pulid-flux");
+            if (imgUrl) images.push(imgUrl);
+          } catch (err: any) {
+            console.warn(`PuLID-FLUX Variation ${i + 1} abgebrochen:`, err?.message);
+            if (images.length > 0) break;
+            throw err;
+          }
+        }
+        break;
+      }
+
+      // 2. InstantID (SDXL) - Strikter Gesichtserhalt mit festem Sweetspot-Lock (0.68)
       case "instantid": {
         providerName = "InstantID SDXL (InstantX) • 30 Steps";
         if (!file) throw new Error("Kein Gesichtsfoto übergeben");
 
         const idClient = await Client.connect("InstantX/InstantID", clientOptions);
-        
-        // Serverseitiger Hardcap bei 0.70 gegen Wachsgesichter (UI-Bypass)
-        const identityRatio = Math.min(
-          Number(identityStrength || 70) / 100,
-          PRODUCTION_CONFIG.instantid_max_strength
-        );
+
+        // Serverseitiger Hardcap bei 0.68 gegen Wachsgesichter
+        const identityRatio = PRODUCTION_CONFIG.instantid_max_strength;
         const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 4);
 
         for (let i = 0; i < targetCount; i++) {
@@ -196,7 +221,7 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // 2. FLUX.1 [dev] - Pro Studio Qualität (28 Steps, Guidance 3.5 - Niemals Schnell)
+      // 3. FLUX.1 [dev] - Pro Studio Qualität (28 Steps, Guidance 3.5)
       case "flux": {
         providerName = "FLUX.1 [dev] (Black Forest Labs) • 28 Steps";
         try {
@@ -237,7 +262,7 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // 3. Qwen-Image 2.1 - Top Textur & Details
+      // 4. Qwen-Image 2.1 - Top Textur & Details
       case "qwen": {
         providerName = "Qwen-Image 2.1 (Alibaba Cloud Qwen)";
         try {
@@ -278,7 +303,7 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // 4. PhotoMaker V2 - Gute Ähnlichkeit & Style
+      // 5. PhotoMaker V2 - Gute Ähnlichkeit & Style
       case "photomaker": {
         providerName = "PhotoMaker V2 (TencentARC)";
         if (!file) throw new Error("Kein Gesichtsfoto übergeben");
@@ -333,42 +358,6 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // 5. SDXL Lightning - Ultra-schnell
-      case "lightning": {
-        providerName = "SDXL-Lightning (ByteDance)";
-        try {
-          const lightClient = await Client.connect(
-            "ByteDance/SDXL-Lightning",
-            clientOptions
-          );
-
-          const result = await lightClient.predict("/generate_image", {
-            prompt: boostedPrompt,
-            ckpt: "4-Step",
-          });
-
-          const imgUrl = extractImageUrl(
-            (result as any)?.data?.[0],
-            "bytedance/sdxl-lightning"
-          );
-          if (imgUrl) images.push(imgUrl);
-        } catch (err: any) {
-          const errMsg = err?.message || "";
-          if (errMsg.includes("GPU quota") || errMsg.includes("ZeroGPU") || !hfToken) {
-            console.log("SDXL-Lightning ZeroGPU ausgelastet -> Aktiviere Zero-Key Lightning Engine");
-            const seed = Math.floor(Math.random() * 2147483647);
-            const encodedPrompt = encodeURIComponent(boostedPrompt);
-            images.push(
-              `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`
-            );
-            providerName = "SDXL Lightning (Ultra-Fast Engine)";
-          } else {
-            throw err;
-          }
-        }
-        break;
-      }
-
       default: {
         return NextResponse.json(
           { error: `Unbekanntes Modell: ${modelId}` },
@@ -387,13 +376,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2-Stufen-Pipeline: Automatischer FaceDetailer Pass (CodeFormer @ 0.65 Fidelity)
+    // ═══════════════════════════════════════════════════════════════════
+    // STUFE 2: BIOMETRISCHER FACE-SWAP (Pass 2) — Dentro/face-swap
+    // Nur bei Modellen mit Gesichtsreferenz: pulid, instantid, photomaker
+    // ═══════════════════════════════════════════════════════════════════
+
+    let faceSwapApplied = false;
+    const faceSwappedImages: string[] = [];
+
+    if (file && requiresFace) {
+      for (const imgUrl of images) {
+        try {
+          console.log("Stufe 2 Pipeline: Führe biometrischen Face-Swap (Dentro/face-swap) aus...");
+          const swapClient = await Client.connect("Dentro/face-swap", clientOptions);
+          const swapResult = await swapClient.predict("/predict", {
+            sourceImage: handle_file(file),
+            sourceFaceIndex: 1,
+            destinationImage: handle_file(imgUrl),
+            destinationFaceIndex: 1,
+          });
+
+          const swappedUrl = extractImageUrl((swapResult as any)?.data?.[0], "dentro/face-swap");
+          if (swappedUrl) {
+            faceSwappedImages.push(swappedUrl);
+            faceSwapApplied = true;
+            console.log("Stufe 2 Face-Swap erfolgreich angewendet.");
+          } else {
+            faceSwappedImages.push(imgUrl);
+          }
+        } catch (err: any) {
+          console.warn("Stufe 2 Face-Swap übersprungen (Fallback auf Basis-Generation):", err?.message);
+          faceSwappedImages.push(imgUrl);
+        }
+      }
+    } else {
+      faceSwappedImages.push(...images);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STUFE 3: TEXTUR-RESTAURATION (Pass 3) — CodeFormer @ 0.65 Fidelity
+    // ═══════════════════════════════════════════════════════════════════
+
     let faceDetailerApplied = false;
     const finalImages: string[] = [];
 
-    for (const imgUrl of images) {
+    for (const imgUrl of faceSwappedImages) {
       try {
-        console.log("Stufe 2 Pipeline: Führe CodeFormer Face Restoration Pass (Fidelity 0.65) aus...");
+        console.log("Stufe 3 Pipeline: Führe CodeFormer Face Restoration Pass (Fidelity 0.65) aus...");
         const cfClient = await Client.connect("sczhou/CodeFormer", clientOptions);
         const res = await cfClient.predict("/inference", {
           image: handle_file(imgUrl),
@@ -408,12 +437,12 @@ export async function POST(req: NextRequest) {
         if (enhancedUrl) {
           finalImages.push(enhancedUrl);
           faceDetailerApplied = true;
-          console.log("Stufe 2 FaceDetailer erfolgreich angewendet.");
+          console.log("Stufe 3 FaceDetailer erfolgreich angewendet.");
         } else {
           finalImages.push(imgUrl);
         }
       } catch (err: any) {
-        console.warn("Stufe 2 CodeFormer übersprungen (Fallback auf Basis-Generation):", err?.message);
+        console.warn("Stufe 3 CodeFormer übersprungen (Fallback auf vorherige Stufe):", err?.message);
         finalImages.push(imgUrl);
       }
     }
@@ -427,7 +456,12 @@ export async function POST(req: NextRequest) {
       count: finalImages.length,
       latency: `${durationSeconds}s`,
       provider: providerName,
-      twoStagePipeline: true,
+      pipeline: {
+        pass1: modelId,
+        pass2: faceSwapApplied ? "Dentro/face-swap" : "skipped",
+        pass3: faceDetailerApplied ? "CodeFormer 0.65" : "skipped",
+      },
+      faceSwapApplied: faceSwapApplied,
       faceDetailerApplied: faceDetailerApplied,
       codeformerFidelity: PRODUCTION_CONFIG.codeformer_fidelity,
       dsgvoCompliant: true,

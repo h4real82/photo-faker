@@ -27,85 +27,55 @@ import {
   X,
   Eye,
   EyeOff,
+  Film,
 } from "lucide-react";
 
-interface Motif {
-  id: string;
-  name: string;
-  desc: string;
-  badge: string;
-  subtitle: string;
-  tags: string[];
-}
-
-const MOTIFS: Motif[] = [
-  {
-    id: "paris-fashion",
-    name: "Paris Fashion Week",
-    subtitle: "Pont Alexandre III • Golden Hour",
-    desc: "Haute Couture Oversized Trench, 35mm Kodak Portra 400",
-    badge: "POPULÄR",
-    tags: ["HAUTE TRENCH", "35MM"],
-  },
-  {
-    id: "neon-noir",
-    name: "Neon Noir Cyber-Editorial",
-    subtitle: "Tokyo Rain • Reflexionen",
-    desc: "Wet Leather Jacket, dramatische Violett- & Cyan-Akzente",
-    badge: "CINEMA",
-    tags: ["HIGH GLOSS", "CINEMA"],
-  },
-  {
-    id: "monaco-yacht",
-    name: "Monaco Yacht Riviera",
-    subtitle: "Old Money Luxury • Sunset Linen",
-    desc: "Mittelmeer-Sonne, natürlicher Bokeh-Look, Hasselblad-Güte",
-    badge: "RAW",
-    tags: ["SUNNY RAW", "OLD MONEY"],
-  },
-  {
-    id: "met-gala",
-    name: "Met Gala Velvet & Gems",
-    subtitle: "Red Carpet • Dramatic Flash",
-    desc: "Glamouröses Abendkleid, harter Paparazzi-Blitz, Vogue-Editorial",
-    badge: "VOGUE",
-    tags: ["VOGUE FRONT", "GLAMOUR"],
-  },
-];
-
 interface AIModel {
-  id: "instantid" | "flux" | "qwen" | "photomaker" | "lightning";
+  id: "pulid" | "instantid" | "flux" | "qwen" | "photomaker";
   name: string;
   tag: string;
   badgeColor: string;
   desc: string;
   speed: string;
+  requiresFace: boolean;
 }
 
 const AI_MODELS: AIModel[] = [
+  {
+    id: "pulid",
+    name: "PuLID-FLUX (2-Pass)",
+    tag: "EMPFOHLEN • Gesichtserhalt + FLUX",
+    badgeColor: "bg-emerald-900/60 text-emerald-300 border-emerald-700/50",
+    desc: "FLUX-basierte Szene mit eingebetteter Gesichtsidentität + Face-Swap Refinement + CodeFormer.",
+    speed: "~25s",
+    requiresFace: true,
+  },
   {
     id: "instantid",
     name: "InstantID (SDXL)",
     tag: "Gesichtserhalt 1:1",
     badgeColor: "bg-violet-900/60 text-violet-300 border-violet-700/50",
     desc: "Strikter biometrischer Gesichtserhalt auf neu generierte Szenen.",
-    speed: "~16s",
+    speed: "~20s",
+    requiresFace: true,
   },
   {
     id: "flux",
     name: "FLUX.1 [dev]",
-    tag: "28-Step Pro HQ",
+    tag: "28-Step Pro HQ (Neues Gesicht)",
     badgeColor: "bg-blue-900/60 text-blue-300 border-blue-700/50",
-    desc: "High-Fidelity 12B Dev Modell mit 28 Steps & 3.5 Guidance (Kein Schnell).",
+    desc: "High-Fidelity 12B Dev Modell. Kein Gesichtserhalt — generiert neue Gesichter.",
     speed: "~16s",
+    requiresFace: false,
   },
   {
     id: "qwen",
     name: "Qwen-Image 2.1",
     tag: "Top Textur & Details (Neues Gesicht)",
     badgeColor: "bg-purple-900/60 text-purple-300 border-purple-700/50",
-    desc: "Hervorragende Hauttexturen, Poren und natürliche Schattenbildung.",
+    desc: "Hervorragende Hauttexturen und Schattenbildung. Kein Gesichtserhalt.",
     speed: "~12s",
+    requiresFace: false,
   },
   {
     id: "photomaker",
@@ -113,15 +83,8 @@ const AI_MODELS: AIModel[] = [
     tag: "Gute Ähnlichkeit & Style",
     badgeColor: "bg-pink-900/60 text-pink-300 border-pink-700/50",
     desc: "Konsistente Gesichts-Identität für hochauflösende Porträts.",
-    speed: "~18s",
-  },
-  {
-    id: "lightning",
-    name: "SDXL Lightning",
-    tag: "Ultra-schnell (Ähnliche Züge)",
-    badgeColor: "bg-amber-900/60 text-amber-300 border-amber-700/50",
-    desc: "ByteDance 4-Step Turbo-Inferenz für sekundenschnelle Generierung.",
-    speed: "~4s",
+    speed: "~22s",
+    requiresFace: true,
   },
 ];
 
@@ -370,7 +333,6 @@ const CURATED_SCENES: ScenePrompt[] = [
 
 export default function PhotoFakerStudio() {
   const [faceImage, setFaceImage] = useState<string | null>(null);
-  const [selectedMotif, setSelectedMotif] = useState<string>("paris-fashion");
   const [selectedCategory, setSelectedCategory] = useState<string>("Alle");
   const [activeSceneInfo, setActiveSceneInfo] = useState<{
     category: string;
@@ -382,15 +344,12 @@ export default function PhotoFakerStudio() {
   const [prompt, setPrompt] = useState<string>(
     CURATED_SCENES[0].prompt.replace(/\{face_reference\}/g, "a person")
   );
-  const [selectedModel, setSelectedModel] = useState<string>("instantid");
+  const [selectedModel, setSelectedModel] = useState<string>("pulid");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
   const [freeGenerations, setFreeGenerations] = useState<number>(10);
-  const [identityLock, setIdentityLock] = useState<number>(70);
   const [aspectRatio, setAspectRatio] = useState<string>("4:5");
   const [batchSize, setBatchSize] = useState<number>(2);
-  const [analogGrain, setAnalogGrain] = useState<number>(45);
-  const [skinTexture, setSkinTexture] = useState<number>(75);
-  const [hairStyle, setHairStyle] = useState<string>("Original Haarstruktur beibehalten");
+  const [filmGrainEnabled, setFilmGrainEnabled] = useState<boolean>(false);
   const [isRendering, setIsRendering] = useState<boolean>(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
@@ -405,6 +364,11 @@ export default function PhotoFakerStudio() {
   const [renderError, setRenderError] = useState<{
     message: string;
     isZeroGpu: boolean;
+  } | null>(null);
+  const [pipelineInfo, setPipelineInfo] = useState<{
+    pass1: string;
+    pass2: string;
+    pass3: string;
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -492,8 +456,8 @@ export default function PhotoFakerStudio() {
 
   // KI-Generierung auslösen
   const handleRender = async () => {
-    const requiresFace = selectedModel === "instantid" || selectedModel === "photomaker";
-    if (requiresFace && !faceImage) {
+    const currentModel = AI_MODELS.find((m) => m.id === selectedModel);
+    if (currentModel?.requiresFace && !faceImage) {
       alert("Für dieses Modell wird ein Referenzgesicht im Face Vault benötigt!");
       fileInputRef.current?.click();
       return;
@@ -509,6 +473,7 @@ export default function PhotoFakerStudio() {
     });
 
     setRenderError(null);
+    setPipelineInfo(null);
     setIsRendering(true);
     try {
       const response = await fetch("/api/generate", {
@@ -516,12 +481,9 @@ export default function PhotoFakerStudio() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           modelId: selectedModel,
-          image: faceImage,
           faceImageBase64: faceImage,
-          motifId: selectedMotif,
           prompt: prompt,
           batchCount: batchSize,
-          identityStrength: identityLock,
           aspectRatio: aspectRatio,
           clientHfToken: hfToken,
         }),
@@ -542,6 +504,9 @@ export default function PhotoFakerStudio() {
         setRenderError(null);
         if (data.latency) {
           setRenderLatency(data.latency);
+        }
+        if (data.pipeline) {
+          setPipelineInfo(data.pipeline);
         }
         // Celebration Confetti
         confetti({
@@ -597,7 +562,7 @@ export default function PhotoFakerStudio() {
   const downloadFallback = (url: string) => {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `photo-faker-${selectedMotif}-${Date.now()}.jpg`;
+    a.download = `photo-faker-${Date.now()}.jpg`;
     a.target = "_blank";
     document.body.appendChild(a);
     a.click();
@@ -654,8 +619,6 @@ export default function PhotoFakerStudio() {
     };
   }, [isDraggingSlider]);
 
-  const activeMotifObj = MOTIFS.find((m) => m.id === selectedMotif) || MOTIFS[0];
-
   return (
     <div className="min-h-screen bg-[#121317] text-[#f4f4f5] flex flex-col font-sans selection:bg-[#8b5cf6] selection:text-white">
       {/* Top Header */}
@@ -670,11 +633,11 @@ export default function PhotoFakerStudio() {
                 PHOTO FAKER
               </span>
               <span className="text-[9px] tracking-widest text-violet-400 font-mono -mt-0.5 uppercase">
-                FACE ENGINE PRO
+                2-PASS PIPELINE PRO
               </span>
             </div>
             <span className="hidden sm:inline text-[10px] tracking-widest text-violet-300 font-mono px-2 py-0.5 rounded-full bg-violet-950/70 border border-violet-800/60 ml-1">
-              ENGINE V4.2
+              ENGINE V5.0
             </span>
           </div>
 
@@ -694,7 +657,7 @@ export default function PhotoFakerStudio() {
                   : "bg-red-500"
               }`}
             ></span>
-            <span className="text-zinc-400 hidden sm:inline">Kostenlose Generierungen:</span>
+            <span className="text-zinc-400 hidden sm:inline">Generierungen:</span>
             <span
               className={`font-bold ${
                 freeGenerations > 0 ? "text-amber-300" : "text-red-400"
@@ -753,12 +716,6 @@ export default function PhotoFakerStudio() {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1b1c24] text-zinc-300">
-            <Sparkles className="w-3.5 h-3.5 text-pink-400" />
-            <span className="text-zinc-400">Preset:</span>
-            <span className="text-white font-medium">{activeMotifObj.name}</span>
-          </div>
-
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-950/50 border border-violet-800/40 text-violet-300">
             <Wand2 className="w-3.5 h-3.5 text-violet-400" />
             <span className="text-zinc-400">Modell:</span>
@@ -769,7 +726,7 @@ export default function PhotoFakerStudio() {
 
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/50 border border-emerald-800/40 text-emerald-300 text-[11px] font-mono">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>2-Stufen-Pipeline: FaceDetailer (CodeFormer 0.65)</span>
+            <span>3-Pass Pipeline: PuLID → Face-Swap → CodeFormer</span>
           </div>
         </div>
 
@@ -781,9 +738,9 @@ export default function PhotoFakerStudio() {
         </div>
       </div>
 
-      {/* 3-Spalten Workbench */}
+      {/* 2-Spalten Workbench (statt 3-Spalten) */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
-        {/* Linke Leiste: Face Vault & Feineinstellung */}
+        {/* Linke Leiste: Face Vault & Einstellungen */}
         <aside className="lg:col-span-3 border-r border-[#2d2e35] p-5 bg-[#16171d] space-y-6 overflow-y-auto max-h-[calc(100vh-100px)]">
           {/* Face Vault */}
           <div className="space-y-3">
@@ -864,85 +821,135 @@ export default function PhotoFakerStudio() {
             )}
           </div>
 
-          {/* Styling & Modifiers */}
-          <div className="space-y-4 pt-4 border-t border-[#2d2e35]">
+          {/* KI-Modell Auswahl (moved from center) */}
+          <div className="space-y-3 pt-4 border-t border-[#2d2e35]">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-                <Sliders className="w-3.5 h-3.5 text-violet-400" />
-                Identitäts-Treue (InstantID)
+                <Wand2 className="w-3.5 h-3.5 text-violet-400" />
+                KI-Modell
               </h3>
-              <span className="text-[10px] font-mono text-violet-400 font-bold">
-                {identityLock}%
+              <span className="text-[10px] font-mono text-zinc-500">
+                {AI_MODELS.length} Modelle
               </span>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs mb-1.5 text-zinc-400">
-                <span>Lock-Stärke</span>
-                <span className="font-mono text-violet-400 font-semibold">{identityLock}% (Gedeckelt auf 70%)</span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="70"
-                value={identityLock}
-                onChange={(e) => setIdentityLock(Number(e.target.value))}
-                className="w-full accent-violet-500 cursor-pointer h-1.5 bg-[#0d0e12] rounded-lg"
-              />
-              <span className="text-[10px] text-zinc-500 block mt-1 leading-tight">
-                Backend-Hardcap bei 0.70 gegen Wachsgesichter. Natürliche Hautporen & Knochenstruktur.
-              </span>
-            </div>
-
-            {/* Analog Grain */}
-            <div>
-              <div className="flex justify-between text-xs mb-1.5 text-zinc-400">
-                <span>Analog 35mm Grain</span>
-                <span className="font-mono text-zinc-300">{analogGrain}% (Portra 400)</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={analogGrain}
-                onChange={(e) => setAnalogGrain(Number(e.target.value))}
-                className="w-full accent-violet-500 cursor-pointer h-1.5 bg-[#0d0e12] rounded-lg"
-              />
-            </div>
-
-            {/* Hauttextur & Poren */}
-            <div>
-              <div className="flex justify-between text-xs mb-1.5 text-zinc-400">
-                <span>Hauttextur & Poren</span>
-                <span className="font-mono text-zinc-300">{skinTexture}% (RAW Contrast)</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={skinTexture}
-                onChange={(e) => setSkinTexture(Number(e.target.value))}
-                className="w-full accent-violet-500 cursor-pointer h-1.5 bg-[#0d0e12] rounded-lg"
-              />
-            </div>
-
-            {/* Haar-Styling Matrix */}
-            <div className="space-y-1.5">
-              <span className="text-xs text-zinc-400">Haar-Styling Matrix</span>
-              <select
-                value={hairStyle}
-                onChange={(e) => setHairStyle(e.target.value)}
-                className="w-full bg-[#121317] border border-[#2e303b] text-zinc-200 text-xs py-2 px-3 rounded-xl focus:outline-none focus:border-violet-500 cursor-pointer"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                className="w-full p-3 rounded-xl bg-[#121317] border border-[#2d2e35] hover:border-violet-500/60 shadow-md flex items-center justify-between transition group text-left cursor-pointer"
               >
-                <option>Original Haarstruktur beibehalten</option>
-                <option>Wet Hair Look (Sleek Haute)</option>
-                <option>Beach Waves (Natural Warm)</option>
-                <option>Voluminous Studio Blowout</option>
-              </select>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-bold text-xs text-white truncate">
+                      {AI_MODELS.find((m) => m.id === selectedModel)?.name}
+                    </span>
+                  </div>
+                  <span
+                    className={`text-[8px] font-mono px-1.5 py-0.5 rounded border w-fit ${
+                      AI_MODELS.find((m) => m.id === selectedModel)?.badgeColor
+                    }`}
+                  >
+                    {AI_MODELS.find((m) => m.id === selectedModel)?.tag}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-zinc-400 shrink-0 group-hover:text-white transition-transform duration-200 ${
+                    isModelDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isModelDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-40 bg-[#16171d] border border-[#2d2e35] rounded-xl shadow-2xl overflow-hidden divide-y divide-[#22232d] animate-in fade-in zoom-in-95 duration-150">
+                  {AI_MODELS.map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => {
+                        setSelectedModel(m.id);
+                        setIsModelDropdownOpen(false);
+                      }}
+                      className={`p-3 cursor-pointer transition flex items-center justify-between ${
+                        selectedModel === m.id
+                          ? "bg-violet-950/40 text-white"
+                          : "hover:bg-[#1f2029] text-zinc-300"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-[11px] text-white">{m.name}</span>
+                          <span className={`text-[8px] font-mono px-1 py-0.5 rounded border ${m.badgeColor}`}>
+                            {m.requiresFace ? "FACE" : "NO FACE"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 line-clamp-1">{m.desc}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                        <span className="text-[9px] font-mono text-zinc-500">{m.speed}</span>
+                        {selectedModel === m.id && (
+                          <Check className="w-3.5 h-3.5 text-violet-400" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Biometrie-Hinweis für Modelle ohne Gesichtserhalt */}
+            {AI_MODELS.find((m) => m.id === selectedModel)?.requiresFace === false && (
+              <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-700/50 text-amber-300 text-[11px] flex items-start gap-2 shadow-sm">
+                <span className="text-sm shrink-0 leading-none">⚠️</span>
+                <span className="leading-relaxed">
+                  Dieses Modell generiert ein <strong>neues Gesicht</strong>. Für biometrischen Gesichtserhalt wähle PuLID-FLUX, InstantID oder PhotoMaker.
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Batch & Frame Specs */}
+          {/* Film Grain Toggle */}
+          <div className="space-y-3 pt-4 border-t border-[#2d2e35]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
+                <Film className="w-3.5 h-3.5 text-amber-400" />
+                Film Look
+              </h3>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFilmGrainEnabled(!filmGrainEnabled)}
+              className={`w-full p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
+                filmGrainEnabled
+                  ? "bg-amber-950/40 border-amber-700/50 text-amber-200"
+                  : "bg-[#121317] border-[#2d2e35] text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-8 h-5 rounded-full relative transition-colors duration-200 ${
+                    filmGrainEnabled ? "bg-amber-500" : "bg-zinc-700"
+                  }`}
+                >
+                  <div
+                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${
+                      filmGrainEnabled ? "left-3.5" : "left-0.5"
+                    }`}
+                  ></div>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold block">Analog 35mm Grain</span>
+                  <span className="text-[10px] text-zinc-500">Kodak Portra 400 Look</span>
+                </div>
+              </div>
+              <span className={`text-[10px] font-mono font-bold ${filmGrainEnabled ? "text-amber-400" : "text-zinc-600"}`}>
+                {filmGrainEnabled ? "AN" : "AUS"}
+              </span>
+            </button>
+          </div>
+
+          {/* Frame & Batch Specs */}
           <div className="space-y-3 pt-4 border-t border-[#2d2e35]">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
@@ -992,113 +999,25 @@ export default function PhotoFakerStudio() {
               </div>
             </div>
           </div>
+
+          {/* DSGVO Card (moved from right sidebar) */}
+          <div className="pt-4 border-t border-[#2d2e35]">
+            <div className="p-3.5 rounded-xl bg-[#121317] border border-[#2d2e35] text-[10px] text-zinc-400 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>100% DSGVO & Zero-Retention</span>
+              </div>
+              <p className="leading-relaxed">
+                Deine Gesichtsdaten werden ausschließlich flüchtig im RAM verarbeitet und zu
+                keinem Zeitpunkt gespeichert oder für Modelltraining verwendet.
+              </p>
+            </div>
+          </div>
         </aside>
 
-        {/* Mitte: Canvas & Vorher/Nachher Live-View */}
-        <section className="lg:col-span-6 p-4 md:p-6 flex flex-col justify-between bg-[#0e0f13] overflow-y-auto max-h-[calc(100vh-100px)]">
+        {/* Hauptbereich: Canvas + Prompt + Export (volle Breite, kein rechtes Panel) */}
+        <section className="lg:col-span-9 p-4 md:p-6 flex flex-col justify-between bg-[#0e0f13] overflow-y-auto max-h-[calc(100vh-100px)]">
           <div>
-            {/* KI-Modell Auswahlelement (Modernes Custom Select / Dropdown) */}
-            <div className="mb-4 relative">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                  <Wand2 className="w-3.5 h-3.5 text-violet-400" />
-                  KI-Modell auswählen
-                </span>
-                <span className="text-[10px] font-mono text-zinc-400 bg-[#16171d] px-2.5 py-0.5 rounded-full border border-zinc-800">
-                  Hugging Face Serverless (5 Modelle)
-                </span>
-              </div>
-
-              {/* Select Trigger */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                  className="w-full p-3.5 rounded-2xl bg-[#16171d] border border-[#2d2e35] hover:border-violet-500/60 shadow-lg flex items-center justify-between transition group text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 font-bold text-xs shrink-0">
-                      <Wand2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white">
-                          {AI_MODELS.find((m) => m.id === selectedModel)?.name}
-                        </span>
-                        <span
-                          className={`text-[9px] font-mono px-2 py-0.5 rounded-md border font-semibold ${
-                            AI_MODELS.find((m) => m.id === selectedModel)?.badgeColor
-                          }`}
-                        >
-                          {AI_MODELS.find((m) => m.id === selectedModel)?.tag}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
-                        {AI_MODELS.find((m) => m.id === selectedModel)?.desc}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-mono text-zinc-500 bg-[#0e0f13] px-2 py-0.5 rounded-md border border-zinc-800 hidden sm:inline">
-                      {AI_MODELS.find((m) => m.id === selectedModel)?.speed}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-zinc-400 group-hover:text-white transition-transform duration-200 ${
-                        isModelDropdownOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </button>
-
-                {/* Dropdown Menu */}
-                {isModelDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-40 bg-[#16171d] border border-[#2d2e35] rounded-2xl shadow-2xl overflow-hidden divide-y divide-[#22232d] animate-in fade-in zoom-in-95 duration-150">
-                    {AI_MODELS.map((m) => (
-                      <div
-                        key={m.id}
-                        onClick={() => {
-                          setSelectedModel(m.id);
-                          setIsModelDropdownOpen(false);
-                        }}
-                        className={`p-3.5 cursor-pointer transition flex items-center justify-between ${
-                          selectedModel === m.id
-                            ? "bg-violet-950/40 text-white"
-                            : "hover:bg-[#1f2029] text-zinc-300"
-                        }`}
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-white">{m.name}</span>
-                            <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded border ${m.badgeColor}`}>
-                              {m.tag}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-zinc-400">{m.desc}</p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] font-mono text-zinc-500">{m.speed}</span>
-                          {selectedModel === m.id && (
-                            <Check className="w-4 h-4 text-violet-400" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Dynamischer Biometrie-Warnhinweis */}
-              {selectedModel !== "instantid" && (
-                <div className="mt-2.5 p-3 rounded-xl bg-amber-950/40 border border-amber-700/50 text-amber-300 text-xs flex items-start gap-2.5 shadow-sm">
-                  <span className="text-base shrink-0 leading-none">⚠️</span>
-                  <div className="leading-relaxed">
-                    <span className="font-semibold block text-amber-200">Biometrie-Hinweis:</span>
-                    <span>Dieses Modell optimiert Fotorealismus und Lichtstimmung. Die Gesichtszüge stimmen nicht 1:1 mit deinem Upload überein.</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Error Banner with ZeroGPU Action */}
             {renderError && (
               <div className="mb-4 p-4 rounded-2xl bg-red-950/50 border border-red-700/60 text-red-200 text-xs shadow-xl animate-in fade-in duration-200">
@@ -1158,7 +1077,7 @@ export default function PhotoFakerStudio() {
             {/* Haupt-Canvas mit Split-Screen */}
             <div
               ref={splitContainerRef}
-              className="relative w-full aspect-[4/5] max-h-[540px] bg-[#16171d] rounded-2xl overflow-hidden border border-[#2d2e35] shadow-2xl mx-auto flex items-center justify-center select-none"
+              className="relative w-full aspect-[4/5] max-h-[580px] bg-[#16171d] rounded-2xl overflow-hidden border border-[#2d2e35] shadow-2xl mx-auto flex items-center justify-center select-none"
             >
               {isRendering ? (
                 <div className="flex flex-col items-center gap-3 p-6 text-center max-w-md">
@@ -1167,22 +1086,29 @@ export default function PhotoFakerStudio() {
                     <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-full"></div>
                   </div>
                   <span className="text-base font-bold tracking-wide text-white">
-                    Fotomontage wird gerendert...
+                    3-Pass Pipeline wird gerendert...
                   </span>
                   <div className="px-3 py-1 rounded-full bg-violet-950/70 border border-violet-700/60 text-xs font-mono text-violet-300 font-semibold">
                     Modell: {AI_MODELS.find((m) => m.id === selectedModel)?.name}
                   </div>
-                  <span className="text-xs text-zinc-400">
-                    {selectedModel === "instantid"
-                      ? `InstantID generiert ${batchSize} photorealistische${batchSize > 1 ? "s" : ""} Porträt${batchSize > 1 ? "s" : ""} mit 1:1 Gesichtserhalt.`
-                      : selectedModel === "flux"
-                      ? "FLUX.1 Schnell berechnet ultra-realistische Kamera-Beleuchtung und Spitzen-Fotoqualität."
-                      : selectedModel === "qwen"
-                      ? "Qwen-Image 2.1 synthetisiert feine Mikro-Poren und stimmige Lichtreflexionen."
-                      : selectedModel === "photomaker"
-                      ? "PhotoMaker V2 synthetisiert ein konsistentes High-Fashion Porträt."
-                      : "SDXL Lightning rendert in 4 Turbo-Inferenzschritten."}
-                  </span>
+
+                  {/* Pipeline Steps Indicator */}
+                  <div className="w-full max-w-xs space-y-2 mt-2">
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-5 h-5 rounded-full bg-violet-600/60 flex items-center justify-center text-[9px] font-bold text-white">1</div>
+                      <span className="text-zinc-300">Szenen-Generierung ({AI_MODELS.find((m) => m.id === selectedModel)?.name})</span>
+                    </div>
+                    {AI_MODELS.find((m) => m.id === selectedModel)?.requiresFace && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="w-5 h-5 rounded-full bg-pink-600/60 flex items-center justify-center text-[9px] font-bold text-white">2</div>
+                        <span className="text-zinc-300">Biometrischer Face-Swap</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs">
+                      <div className="w-5 h-5 rounded-full bg-emerald-600/60 flex items-center justify-center text-[9px] font-bold text-white">3</div>
+                      <span className="text-zinc-300">CodeFormer Textur-Restauration</span>
+                    </div>
+                  </div>
 
                   {/* Warteschlangen-Hinweis */}
                   <div className="mt-2 p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/40 text-[11px] text-amber-300/90 leading-relaxed flex items-start gap-2 text-left">
@@ -1236,6 +1162,25 @@ export default function PhotoFakerStudio() {
                     {AI_MODELS.find((m) => m.id === selectedModel)?.name.toUpperCase() || "KI"} RENDER
                   </div>
 
+                  {/* Pipeline info badge */}
+                  {pipelineInfo && (
+                    <div className="absolute bottom-3 left-3 flex gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full bg-violet-950/80 backdrop-blur-md text-[9px] font-mono text-violet-300 border border-violet-800/40">
+                        Pass 1: {pipelineInfo.pass1}
+                      </span>
+                      {pipelineInfo.pass2 !== "skipped" && (
+                        <span className="px-2 py-0.5 rounded-full bg-pink-950/80 backdrop-blur-md text-[9px] font-mono text-pink-300 border border-pink-800/40">
+                          Pass 2: Face-Swap ✓
+                        </span>
+                      )}
+                      {pipelineInfo.pass3 !== "skipped" && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-950/80 backdrop-blur-md text-[9px] font-mono text-emerald-300 border border-emerald-800/40">
+                          Pass 3: CodeFormer ✓
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Split Handle */}
                   {faceImage && (
                     <div
@@ -1262,7 +1207,7 @@ export default function PhotoFakerStudio() {
                       Referenzgesicht geladen
                     </span>
                     <span className="text-xs text-zinc-400">
-                      Wähle rechts ein Shooting-Motiv und klicke auf "Rendern".
+                      Beschreibe unten eine Szene und klicke auf &quot;Generieren&quot;.
                     </span>
                   </div>
                 </div>
@@ -1316,231 +1261,152 @@ export default function PhotoFakerStudio() {
                 </div>
               </div>
             )}
-          </div>
 
-            {/* Szene & Prompt-Editor mit Würfel-Button & Kategorien */}
-            <div className="mt-4 p-3.5 rounded-2xl bg-[#16171d] border border-[#2d2e35] shadow-lg space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                    Szene & Prompt-Editor
-                  </span>
-                  <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800/50 text-emerald-400 font-semibold">
-                    Photo-Booster Aktiv
-                  </span>
-                </div>
+            {/* Export-Aktionen (moved from right sidebar) */}
+            {generatedImages.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
-                  type="button"
-                  onClick={() => handleRandomPrompt()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 hover:text-white border border-violet-500/40 text-xs font-semibold transition active:scale-95 group shadow-sm cursor-pointer"
-                  title="Zufällige Szene aus Pool wählen"
+                  onClick={handleSaveToPhotos}
+                  className="flex-1 min-w-[180px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition active:scale-[0.98]"
                 >
-                  <Dices className="w-4 h-4 text-amber-300 group-hover:rotate-180 transition-transform duration-300" />
-                  <span>Zufallsszene</span>
+                  <Download className="w-4 h-4" />
+                  <span>In Fotos sichern (1-Klick)</span>
+                </button>
+
+                <button
+                  onClick={handleSaveToPhotos}
+                  className="py-2.5 px-4 rounded-xl bg-[#22232d] hover:bg-[#2b2d3a] text-zinc-200 font-semibold text-xs flex items-center justify-center gap-2 border border-[#343644] transition active:scale-[0.98]"
+                >
+                  <Share2 className="w-4 h-4 text-violet-400" />
+                  <span>Share</span>
+                </button>
+
+                <button
+                  onClick={handleCopyToClipboard}
+                  className="py-2.5 px-3 rounded-xl bg-[#1a1b22] hover:bg-[#22232d] text-zinc-300 font-medium text-xs flex items-center gap-2 border border-[#2e303b] transition"
+                >
+                  <Copy className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>{copied ? "Kopiert!" : "Link kopieren"}</span>
                 </button>
               </div>
+            )}
+          </div>
 
-              {/* Category Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
-                {SCENE_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      handleRandomPrompt(cat);
-                    }}
-                    className={`px-2.5 py-1 rounded-lg font-medium transition shrink-0 cursor-pointer ${
-                      selectedCategory === cat
-                        ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
-                        : "bg-[#101116] text-zinc-400 hover:text-white border border-[#262833]"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
-              {/* Aktuelle Szene Info */}
-              {activeSceneInfo.title && (
-                <div className="flex items-center justify-between text-[10px] font-mono px-1">
-                  <span className="text-zinc-400">
-                    Aktuelle Szene:{" "}
-                    <span className="text-violet-300 font-semibold">
-                      {activeSceneInfo.title}
-                    </span>
-                  </span>
-                  <span className="text-zinc-500">
-                    {activeSceneInfo.category}
-                  </span>
-                </div>
-              )}
-
-              <div className="relative">
-                <textarea
-                  rows={3}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Beschreibe eine eigene Szene oder wähle oben eine Kategorie / Zufallsszene..."
-                  className="w-full bg-[#101116] border border-[#2d2e35] focus:border-violet-500 rounded-xl p-3 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition resize-none leading-relaxed"
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-[10px] text-zinc-400">
-                <span className="flex items-center gap-1">
-                  <span className="text-amber-400">📸</span>
-                  <span>Fotografische Kamera-Keywords (Sony A7 IV, 85mm f/1.4, 8k) werden automatisch ergänzt.</span>
+          {/* Szene & Prompt-Editor mit Würfel-Button & Kategorien */}
+          <div className="mt-4 p-4 rounded-2xl bg-[#16171d] border border-[#2d2e35] shadow-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  Szene & Prompt
                 </span>
-                <span className="font-mono text-zinc-500 shrink-0 ml-2">
-                  {prompt.length} Zeichen
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-800/50 text-emerald-400 font-semibold">
+                  Photo-Booster Aktiv
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => handleRandomPrompt()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 hover:text-white border border-violet-500/40 text-xs font-semibold transition active:scale-95 group shadow-sm cursor-pointer"
+                title="Zufällige Szene aus Pool wählen"
+              >
+                <Dices className="w-4 h-4 text-amber-300 group-hover:rotate-180 transition-transform duration-300" />
+                <span>Zufallsszene</span>
+              </button>
             </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
+              {SCENE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    handleRandomPrompt(cat);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition shrink-0 cursor-pointer ${
+                    selectedCategory === cat
+                      ? "bg-violet-600 text-white shadow-sm shadow-violet-600/30"
+                      : "bg-[#101116] text-zinc-400 hover:text-white border border-[#262833]"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Aktuelle Szene Info */}
+            {activeSceneInfo.title && (
+              <div className="flex items-center justify-between text-[10px] font-mono px-1">
+                <span className="text-zinc-400">
+                  Aktuelle Szene:{" "}
+                  <span className="text-violet-300 font-semibold">
+                    {activeSceneInfo.title}
+                  </span>
+                </span>
+                <span className="text-zinc-500">
+                  {activeSceneInfo.category}
+                </span>
+              </div>
+            )}
+
+            <div className="relative">
+              <textarea
+                rows={4}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Beschreibe die gewünschte Szene, Kleidung, Beleuchtung und Kameraeinstellung..."
+                className="w-full bg-[#101116] border border-[#2d2e35] focus:border-violet-500 rounded-xl p-3.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition resize-none leading-relaxed"
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] text-zinc-400">
+              <span className="flex items-center gap-1">
+                <span className="text-amber-400">📸</span>
+                <span>Fotografische Keywords (85mm, f/1.8, 8k, raw photo) werden automatisch ergänzt.</span>
+              </span>
+              <span className="font-mono text-zinc-500 shrink-0 ml-2">
+                {prompt.length} Zeichen
+              </span>
+            </div>
+          </div>
 
           {/* Render CTA Button */}
           <div className="mt-4">
             <button
               onClick={handleRender}
-              disabled={isRendering || !faceImage}
+              disabled={isRendering}
               className="w-full py-4 px-6 rounded-2xl font-bold tracking-wide flex items-center justify-center gap-2.5 transition text-sm md:text-base shadow-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-500 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-violet-600/30 active:scale-[0.99]"
             >
               {isRendering ? (
                 <>
                   <RefreshCw className="w-5 h-5 animate-spin" />
-                  <span>RENDERING LÄUFT...</span>
+                  <span>3-PASS PIPELINE LÄUFT...</span>
                 </>
               ) : (
                 <>
                   <Zap className="w-5 h-5 fill-current text-amber-300" />
                   <span>
-                    FOTOMONTAGE RENDERN ({batchSize} {batchSize === 1 ? "BILD" : "VARIATIONEN"} • ECHTFOTO)
+                    GENERIEREN ({batchSize} {batchSize === 1 ? "BILD" : "VARIATIONEN"} • {AI_MODELS.find((m) => m.id === selectedModel)?.name})
                   </span>
                 </>
               )}
             </button>
           </div>
         </section>
-
-        {/* Rechte Leiste: Motive & 1-Klick Export */}
-        <aside className="lg:col-span-3 border-l border-[#2d2e35] p-5 bg-[#16171d] space-y-6 overflow-y-auto max-h-[calc(100vh-100px)]">
-          {/* Motive Liste */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-violet-400" />
-                Shooting-Motive
-              </h2>
-              <span className="text-[10px] font-mono text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-full font-bold">
-                {MOTIFS.length} PRESETS
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {MOTIFS.map((motif) => (
-                <div
-                  key={motif.id}
-                  onClick={() => {
-                    setSelectedMotif(motif.id);
-                    setPrompt(motif.desc);
-                  }}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition ${
-                    selectedMotif === motif.id
-                      ? "bg-violet-950/40 border-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.3)] scale-[1.01]"
-                      : "bg-[#1b1c24] border-[#2e303b] hover:border-zinc-500"
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-xs text-white">{motif.name}</span>
-                    <span className="text-[9px] font-mono font-bold text-violet-300 bg-violet-900/60 px-1.5 py-0.5 rounded">
-                      {motif.badge}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-300 font-medium mb-1">
-                    {motif.subtitle}
-                  </p>
-                  <p className="text-[10px] text-zinc-500 leading-tight">
-                    {motif.desc}
-                  </p>
-                  <div className="flex gap-1 mt-2">
-                    {motif.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#121317] text-zinc-400"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Export-Aktionen */}
-          <div className="pt-4 border-t border-[#2d2e35] space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center justify-between">
-              <span>Direkt-Export</span>
-              <span className="text-[10px] font-mono text-amber-400">NO WATERMARK</span>
-            </h3>
-
-            <button
-              onClick={handleSaveToPhotos}
-              disabled={generatedImages.length === 0}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 disabled:opacity-40 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition active:scale-[0.98]"
-            >
-              <Download className="w-4 h-4" />
-              <span>In Fotos sichern (1-Klick)</span>
-            </button>
-
-            <button
-              onClick={handleSaveToPhotos}
-              disabled={generatedImages.length === 0}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#22232d] hover:bg-[#2b2d3a] disabled:opacity-40 text-zinc-200 font-semibold text-xs flex items-center justify-center gap-2 border border-[#343644] transition active:scale-[0.98]"
-            >
-              <Share2 className="w-4 h-4 text-violet-400" />
-              <span>Web Share (AirDrop, Insta, WA)</span>
-            </button>
-
-            <button
-              onClick={handleCopyToClipboard}
-              disabled={generatedImages.length === 0}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#1a1b22] hover:bg-[#22232d] disabled:opacity-40 text-zinc-300 font-medium text-xs flex items-center justify-between px-3 border border-[#2e303b] transition"
-            >
-              <span className="flex items-center gap-2">
-                <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Bildlink kopieren</span>
-              </span>
-              <span className="text-[10px] font-mono text-violet-400">
-                {copied ? "Kopiert!" : "URL"}
-              </span>
-            </button>
-
-            {/* DSGVO Card */}
-            <div className="p-3.5 rounded-xl bg-[#121317] border border-[#2d2e35] text-[10px] text-zinc-400 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>100% DSGVO & Zero-Retention</span>
-              </div>
-              <p className="leading-relaxed">
-                Deine Gesichtsdaten werden ausschließlich flüchtig im RAM verarbeitet und zu
-                keinem Zeitpunkt gespeichert oder für Modelltraining verwendet.
-              </p>
-            </div>
-          </div>
-        </aside>
       </main>
 
       {/* Footer */}
       <footer className="w-full bg-[#0d0e12] border-t border-[#22232d] px-4 md:px-8 py-3 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
         <div className="flex items-center gap-2">
           <span className="font-bold text-zinc-300">PHOTO FAKER</span>
-          <span>• Face Engine Pro Studio v4.2</span>
+          <span>• 2-Pass Pipeline Pro Studio v5.0</span>
         </div>
         <div className="flex items-center gap-4 text-[11px]">
           <span>Zero-Retention Privacy Verified</span>
           <span>•</span>
-          <span>InstantID Neural Pipeline</span>
+          <span>PuLID-FLUX → Face-Swap → CodeFormer</span>
         </div>
         <div className="text-[11px]">
           © 2025 Photo Faker Studio. High-Fidelity Generative Portraiture.
@@ -1597,7 +1463,7 @@ export default function PhotoFakerStudio() {
                   gehen.
                 </li>
                 <li>
-                  Klicke auf <strong>"Create new token"</strong> (Type: <strong>Read</strong>).
+                  Klicke auf <strong>&quot;Create new token&quot;</strong> (Type: <strong>Read</strong>).
                 </li>
                 <li>Token kopieren (<code className="text-amber-300 bg-black/40 px-1 rounded">hf_...</code>) und unten einfügen:</li>
               </ol>
