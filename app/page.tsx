@@ -93,11 +93,11 @@ const AI_MODELS: AIModel[] = [
   },
   {
     id: "flux",
-    name: "FLUX.1 Schnell",
-    tag: "Beste Fotoqualität (Neues Gesicht)",
+    name: "FLUX.1 [dev]",
+    tag: "28-Step Pro HQ",
     badgeColor: "bg-blue-900/60 text-blue-300 border-blue-700/50",
-    desc: "12B Next-Gen Diffusionsmodell für höchste fotografische Güte.",
-    speed: "~6s",
+    desc: "High-Fidelity 12B Dev Modell mit 28 Steps & 3.5 Guidance (Kein Schnell).",
+    speed: "~16s",
   },
   {
     id: "qwen",
@@ -385,7 +385,7 @@ export default function PhotoFakerStudio() {
   const [selectedModel, setSelectedModel] = useState<string>("instantid");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
   const [freeGenerations, setFreeGenerations] = useState<number>(10);
-  const [identityLock, setIdentityLock] = useState<number>(100);
+  const [identityLock, setIdentityLock] = useState<number>(70);
   const [aspectRatio, setAspectRatio] = useState<string>("4:5");
   const [batchSize, setBatchSize] = useState<number>(2);
   const [analogGrain, setAnalogGrain] = useState<number>(45);
@@ -766,6 +766,11 @@ export default function PhotoFakerStudio() {
               {AI_MODELS.find((m) => m.id === selectedModel)?.name}
             </span>
           </div>
+
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/50 border border-emerald-800/40 text-emerald-300 text-[11px] font-mono">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>2-Stufen-Pipeline: FaceDetailer (CodeFormer 0.65)</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -874,18 +879,18 @@ export default function PhotoFakerStudio() {
             <div>
               <div className="flex justify-between text-xs mb-1.5 text-zinc-400">
                 <span>Lock-Stärke</span>
-                <span className="font-mono text-violet-400 font-semibold">{identityLock}%</span>
+                <span className="font-mono text-violet-400 font-semibold">{identityLock}% (Gedeckelt auf 70%)</span>
               </div>
               <input
                 type="range"
-                min="70"
-                max="100"
+                min="50"
+                max="70"
                 value={identityLock}
                 onChange={(e) => setIdentityLock(Number(e.target.value))}
                 className="w-full accent-violet-500 cursor-pointer h-1.5 bg-[#0d0e12] rounded-lg"
               />
               <span className="text-[10px] text-zinc-500 block mt-1 leading-tight">
-                Erhält 100% der Knochenstruktur & biometrischen Merkmale im Render.
+                Backend-Hardcap bei 0.70 gegen Wachsgesichter. Natürliche Hautporen & Knochenstruktur.
               </span>
             </div>
 

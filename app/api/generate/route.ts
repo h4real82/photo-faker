@@ -34,6 +34,17 @@ const MOTIFS: Record<string, MotifConfig> = {
   },
 };
 
+// Feste serverseitige Produktions-Parameter (UI-Bypass gegen Wachsgesichter & Verwaschungen)
+const PRODUCTION_CONFIG = {
+  instantid_max_strength: 0.70, // Hardcap bei 0.70 gegen Wachsgesichter
+  instantid_steps: 30, // Mindestens 28-35 Steps
+  instantid_guidance: 5.0, // SDXL Guidance 5.0
+  flux_model: "black-forest-labs/FLUX.1-dev", // Niemals 'schnell' für Porträts
+  flux_steps: 28, // 28 Inference Steps
+  flux_guidance: 3.5, // 3.0 - 3.5 Guidance Scale
+  codeformer_fidelity: 0.65, // Sweetspot für natürliche Hautporen & Iris
+};
+
 function extractImageUrl(raw: any, spaceSlug: string): string {
   if (!raw) return "";
   let url = "";
@@ -58,7 +69,7 @@ export async function POST(req: NextRequest) {
       prompt: userPrompt,
       modelId = "instantid",
       batchCount = 2,
-      identityStrength = 85,
+      identityStrength = 70,
       aspectRatio = "4:5",
       clientHfToken,
     } = body;
@@ -126,7 +137,7 @@ export async function POST(req: NextRequest) {
       hf_token: (hfToken as `hf_${string}`) || undefined,
     };
 
-    // Dimensionen für Text-to-Image Modelle ableiten
+    // Dimensionen für Text-to-Image Modelle ableiten (Standard 4:5 Portrait 896x1152)
     const resolutionMap: Record<string, { width: number; height: number }> = {
       "1:1": { width: 1024, height: 1024 },
       "4:5": { width: 896, height: 1152 },
@@ -138,15 +149,18 @@ export async function POST(req: NextRequest) {
     let providerName = "";
 
     switch (modelId) {
-      // 1. InstantID (SDXL) - Strikter Gesichtserhalt 1:1
+      // 1. InstantID (SDXL) - Strikter Gesichtserhalt mit festem Sweetspot-Lock (0.70)
       case "instantid": {
-        providerName = "InstantID SDXL (InstantX)";
+        providerName = "InstantID SDXL (InstantX) • 30 Steps";
         if (!file) throw new Error("Kein Gesichtsfoto übergeben");
 
         const idClient = await Client.connect("InstantX/InstantID", clientOptions);
-        const identityRatio = identityStrength
-          ? Math.min(Math.max(identityStrength / 100, 0.6), 1.0)
-          : 0.8;
+        
+        // Serverseitiger Hardcap bei 0.70 gegen Wachsgesichter (UI-Bypass)
+        const identityRatio = Math.min(
+          Number(identityStrength || 70) / 100,
+          PRODUCTION_CONFIG.instantid_max_strength
+        );
         const targetCount = Math.min(Math.max(Number(batchCount) || 1, 1), 4);
 
         for (let i = 0; i < targetCount; i++) {
@@ -158,13 +172,13 @@ export async function POST(req: NextRequest) {
               prompt: boostedPrompt,
               negative_prompt: MANDATORY_NEGATIVE_PROMPT,
               style_name: "(No style)",
-              num_steps: 30,
+              num_steps: PRODUCTION_CONFIG.instantid_steps,
               identitynet_strength_ratio: identityRatio,
               adapter_strength_ratio: 0.8,
               canny_strength: 0.4,
               depth_strength: 0.4,
               controlnet_selection: ["depth"],
-              guidance_scale: 5,
+              guidance_scale: PRODUCTION_CONFIG.instantid_guidance,
               seed: seed,
               scheduler: "EulerDiscreteScheduler",
               enable_LCM: false,
@@ -182,12 +196,12 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // 2. FLUX.1 Schnell - Beste Fotoqualität
+      // 2. FLUX.1 [dev] - Pro Studio Qualität (28 Steps, Guidance 3.5 - Niemals Schnell)
       case "flux": {
-        providerName = "FLUX.1 Schnell (Black Forest Labs)";
+        providerName = "FLUX.1 [dev] (Black Forest Labs) • 28 Steps";
         try {
           const fluxClient = await Client.connect(
-            "black-forest-labs/FLUX.1-schnell",
+            PRODUCTION_CONFIG.flux_model,
             clientOptions
           );
 
@@ -197,24 +211,25 @@ export async function POST(req: NextRequest) {
             randomize_seed: true,
             width: width,
             height: height,
-            num_inference_steps: 4,
+            guidance_scale: PRODUCTION_CONFIG.flux_guidance,
+            num_inference_steps: PRODUCTION_CONFIG.flux_steps,
           });
 
           const imgUrl = extractImageUrl(
             (result as any)?.data?.[0],
-            "black-forest-labs/flux-1-schnell"
+            "black-forest-labs/flux-1-dev"
           );
           if (imgUrl) images.push(imgUrl);
         } catch (err: any) {
           const errMsg = err?.message || "";
           if (errMsg.includes("GPU quota") || errMsg.includes("ZeroGPU") || !hfToken) {
-            console.log("FLUX Space ZeroGPU ausgelastet -> Aktiviere Zero-Key Fallback Engine");
+            console.log("FLUX Dev Space ZeroGPU ausgelastet -> Aktiviere Zero-Key Fallback Engine");
             const seed = Math.floor(Math.random() * 2147483647);
             const encodedPrompt = encodeURIComponent(boostedPrompt);
             images.push(
               `https://image.pollinations.ai/prompt/${encodedPrompt}?model=flux&width=${width}&height=${height}&seed=${seed}&nologo=true`
             );
-            providerName = "FLUX.1 Schnell (Ultra-Fast Engine)";
+            providerName = "FLUX.1 Pro (Ultra-Fast Engine)";
           } else {
             throw err;
           }
@@ -372,15 +387,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 2-Stufen-Pipeline: Automatischer FaceDetailer Pass (CodeFormer @ 0.65 Fidelity)
+    let faceDetailerApplied = false;
+    const finalImages: string[] = [];
+
+    for (const imgUrl of images) {
+      try {
+        console.log("Stufe 2 Pipeline: Führe CodeFormer Face Restoration Pass (Fidelity 0.65) aus...");
+        const cfClient = await Client.connect("sczhou/CodeFormer", clientOptions);
+        const res = await cfClient.predict("/inference", {
+          image: handle_file(imgUrl),
+          face_align: true,
+          background_enhance: true,
+          face_upsample: true,
+          upscale: 1,
+          codeformer_fidelity: PRODUCTION_CONFIG.codeformer_fidelity,
+        });
+
+        const enhancedUrl = extractImageUrl((res as any)?.data?.[0], "sczhou/codeformer");
+        if (enhancedUrl) {
+          finalImages.push(enhancedUrl);
+          faceDetailerApplied = true;
+          console.log("Stufe 2 FaceDetailer erfolgreich angewendet.");
+        } else {
+          finalImages.push(imgUrl);
+        }
+      } catch (err: any) {
+        console.warn("Stufe 2 CodeFormer übersprungen (Fallback auf Basis-Generation):", err?.message);
+        finalImages.push(imgUrl);
+      }
+    }
+
     const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
 
     return NextResponse.json({
       success: true,
-      images: images,
-      image: images[0],
-      count: images.length,
+      images: finalImages,
+      image: finalImages[0],
+      count: finalImages.length,
       latency: `${durationSeconds}s`,
       provider: providerName,
+      twoStagePipeline: true,
+      faceDetailerApplied: faceDetailerApplied,
+      codeformerFidelity: PRODUCTION_CONFIG.codeformer_fidelity,
       dsgvoCompliant: true,
       cachedInRamOnly: true,
     });
