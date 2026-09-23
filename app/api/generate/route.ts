@@ -32,13 +32,20 @@ const PRODUCTION_CONFIG = {
   flux_guidance: 3.5,
 };
 
-function extractImageUrl(raw: any, spaceSlug: string): string {
+function extractImageUrl(raw: unknown, spaceSlug: string): string {
   if (!raw) return "";
   let url = "";
   if (typeof raw === "string") {
     url = raw;
-  } else if (typeof raw === "object") {
-    url = raw.url || raw.path || raw.image?.url || raw.image?.path || "";
+  } else if (typeof raw === "object" && raw !== null) {
+    const obj = raw as Record<string, unknown>;
+    const imgObj = obj.image as Record<string, unknown> | undefined;
+    url =
+      (typeof obj.url === "string" ? obj.url : "") ||
+      (typeof obj.path === "string" ? obj.path : "") ||
+      (typeof imgObj?.url === "string" ? imgObj.url : "") ||
+      (typeof imgObj?.path === "string" ? imgObj.path : "") ||
+      "";
   }
   if (url.startsWith("/")) {
     url = `https://${spaceSlug.replace("/", "-").toLowerCase()}.hf.space${url}`;
@@ -135,9 +142,9 @@ export async function POST(req: NextRequest) {
     };
     const { width, height } = resolutionMap[aspectRatio] || resolutionMap["4:5"];
 
-    let images: string[] = [];
+    const images: string[] = [];
     let providerName = "";
-    let pipelinePasses = {
+    const pipelinePasses = {
       pass1: modelId,
       pass2: "native",
       pass3: "native",
@@ -154,34 +161,40 @@ export async function POST(req: NextRequest) {
         try {
           const pulidClient = await Client.connect("yanze/PuLID-FLUX", clientOptions);
 
-          for (let i = 0; i < targetCount; i++) {
-            try {
-              const seed = Math.floor(Math.random() * 2147483647);
-              const result = await pulidClient.predict("/generate_image", {
-                prompt: boostedPrompt,
-                id_image: handle_file(file),
-                start_step: PRODUCTION_CONFIG.pulid_start_step,
-                guidance: PRODUCTION_CONFIG.pulid_guidance,
-                seed: String(seed),
-                true_cfg: PRODUCTION_CONFIG.pulid_true_cfg,
-                width: width,
-                height: height,
-                num_steps: PRODUCTION_CONFIG.pulid_steps,
-                id_weight: PRODUCTION_CONFIG.pulid_id_weight,
-                neg_prompt: MANDATORY_NEGATIVE_PROMPT,
-                timestep_to_start_cfg: 1,
-                max_sequence_length: PRODUCTION_CONFIG.pulid_max_sequence_length,
-              });
+          // Performance Optimization: Execute batch inference requests concurrently with Promise.allSettled
+          // instead of sequentially awaiting each image prediction. Reduces total batch generation latency
+          // by up to targetCount-fold (~50% faster for batchSize=2, ~75% faster for batchSize=4).
+          const tasks = Array.from({ length: targetCount }, () => {
+            const seed = Math.floor(Math.random() * 2147483647);
+            return pulidClient.predict("/generate_image", {
+              prompt: boostedPrompt,
+              id_image: handle_file(file!),
+              start_step: PRODUCTION_CONFIG.pulid_start_step,
+              guidance: PRODUCTION_CONFIG.pulid_guidance,
+              seed: String(seed),
+              true_cfg: PRODUCTION_CONFIG.pulid_true_cfg,
+              width: width,
+              height: height,
+              num_steps: PRODUCTION_CONFIG.pulid_steps,
+              id_weight: PRODUCTION_CONFIG.pulid_id_weight,
+              neg_prompt: MANDATORY_NEGATIVE_PROMPT,
+              timestep_to_start_cfg: 1,
+              max_sequence_length: PRODUCTION_CONFIG.pulid_max_sequence_length,
+            });
+          });
 
-              const imgUrl = extractImageUrl((result as any)?.data?.[0], "yanze/pulid-flux");
+          const results = await Promise.allSettled(tasks);
+          for (const res of results) {
+            if (res.status === "fulfilled") {
+              const imgUrl = extractImageUrl((res.value as { data?: unknown[] })?.data?.[0], "yanze/pulid-flux");
               if (imgUrl) images.push(imgUrl);
-            } catch (err: any) {
-              console.warn(`PuLID-FLUX Iteration ${i + 1} fehlgeschlagen:`, err?.message);
-              if (images.length > 0) break;
+            } else {
+              console.warn("PuLID-FLUX task failed:", res.reason);
             }
           }
-        } catch (err: any) {
-          console.warn("PuLID-FLUX Space nicht erreichbar/ausgelastet -> Fallback auf FLUX High-Quality Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("PuLID-FLUX Space nicht erreichbar/ausgelastet -> Fallback auf FLUX High-Quality Engine", msg);
         }
 
         if (images.length === 0) {
@@ -201,37 +214,42 @@ export async function POST(req: NextRequest) {
         try {
           const idClient = await Client.connect("InstantX/InstantID", clientOptions);
 
-          for (let i = 0; i < targetCount; i++) {
-            try {
-              const seed = Math.floor(Math.random() * 2147483647);
-              const result = await idClient.predict("/generate_image", {
-                face_image_path: handle_file(file),
-                pose_image_path: null,
-                prompt: boostedPrompt,
-                negative_prompt: MANDATORY_NEGATIVE_PROMPT,
-                style_name: "(No style)",
-                num_steps: PRODUCTION_CONFIG.instantid_steps,
-                identitynet_strength_ratio: PRODUCTION_CONFIG.instantid_max_strength,
-                adapter_strength_ratio: 0.8,
-                canny_strength: 0.4,
-                depth_strength: 0.4,
-                controlnet_selection: ["depth"],
-                guidance_scale: PRODUCTION_CONFIG.instantid_guidance,
-                seed: seed,
-                scheduler: "EulerDiscreteScheduler",
-                enable_LCM: false,
-                enhance_face_region: true,
-              });
+          // Performance Optimization: Run batch predictions concurrently with Promise.allSettled
+          // to dramatically cut down waiting time for multiple image outputs.
+          const tasks = Array.from({ length: targetCount }, () => {
+            const seed = Math.floor(Math.random() * 2147483647);
+            return idClient.predict("/generate_image", {
+              face_image_path: handle_file(file!),
+              pose_image_path: null,
+              prompt: boostedPrompt,
+              negative_prompt: MANDATORY_NEGATIVE_PROMPT,
+              style_name: "(No style)",
+              num_steps: PRODUCTION_CONFIG.instantid_steps,
+              identitynet_strength_ratio: PRODUCTION_CONFIG.instantid_max_strength,
+              adapter_strength_ratio: 0.8,
+              canny_strength: 0.4,
+              depth_strength: 0.4,
+              controlnet_selection: ["depth"],
+              guidance_scale: PRODUCTION_CONFIG.instantid_guidance,
+              seed: seed,
+              scheduler: "EulerDiscreteScheduler",
+              enable_LCM: false,
+              enhance_face_region: true,
+            });
+          });
 
-              const imgUrl = extractImageUrl((result as any)?.data?.[0], "instantx/instantid");
+          const results = await Promise.allSettled(tasks);
+          for (const res of results) {
+            if (res.status === "fulfilled") {
+              const imgUrl = extractImageUrl((res.value as { data?: unknown[] })?.data?.[0], "instantx/instantid");
               if (imgUrl) images.push(imgUrl);
-            } catch (err: any) {
-              console.warn(`InstantID Iteration ${i + 1} fehlgeschlagen:`, err?.message);
-              if (images.length > 0) break;
+            } else {
+              console.warn("InstantID task failed:", res.reason);
             }
           }
-        } catch (err: any) {
-          console.warn("InstantID Space nicht erreichbar/ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("InstantID Space nicht erreichbar/ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -252,8 +270,10 @@ export async function POST(req: NextRequest) {
             clientOptions
           );
 
-          for (let i = 0; i < targetCount; i++) {
-            const result = await fluxClient.predict("/infer", {
+          // Performance Optimization: Fire off parallel inference requests for batch generation
+          // reducing total response time from O(N * T) to ~O(T).
+          const tasks = Array.from({ length: targetCount }, () =>
+            fluxClient.predict("/infer", {
               prompt: boostedPrompt,
               seed: Math.floor(Math.random() * 2147483647),
               randomize_seed: true,
@@ -261,16 +281,24 @@ export async function POST(req: NextRequest) {
               height: height,
               guidance_scale: PRODUCTION_CONFIG.flux_guidance,
               num_inference_steps: PRODUCTION_CONFIG.flux_steps,
-            });
+            })
+          );
 
-            const imgUrl = extractImageUrl(
-              (result as any)?.data?.[0],
-              "black-forest-labs/flux-1-dev"
-            );
-            if (imgUrl) images.push(imgUrl);
+          const results = await Promise.allSettled(tasks);
+          for (const res of results) {
+            if (res.status === "fulfilled") {
+              const imgUrl = extractImageUrl(
+                (res.value as { data?: unknown[] })?.data?.[0],
+                "black-forest-labs/flux-1-dev"
+              );
+              if (imgUrl) images.push(imgUrl);
+            } else {
+              console.warn("FLUX task failed:", res.reason);
+            }
           }
-        } catch (err: any) {
-          console.warn("FLUX Dev Space ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("FLUX Dev Space ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -288,8 +316,9 @@ export async function POST(req: NextRequest) {
         try {
           const qwenClient = await Client.connect("Qwen/Qwen-Image-2.1", clientOptions);
 
-          for (let i = 0; i < targetCount; i++) {
-            const result = await qwenClient.predict("/generate_with_enhance", {
+          // Performance Optimization: Parallelize batch image generation promises.
+          const tasks = Array.from({ length: targetCount }, () =>
+            qwenClient.predict("/generate_with_enhance", {
               input_images: [],
               original_prompt: boostedPrompt,
               enable_extend: false,
@@ -300,16 +329,24 @@ export async function POST(req: NextRequest) {
               height: height,
               width: width,
               negative_prompt: MANDATORY_NEGATIVE_PROMPT,
-            });
+            })
+          );
 
-            const imgUrl = extractImageUrl(
-              (result as any)?.data?.[0],
-              "qwen/qwen-image-2-1"
-            );
-            if (imgUrl) images.push(imgUrl);
+          const results = await Promise.allSettled(tasks);
+          for (const res of results) {
+            if (res.status === "fulfilled") {
+              const imgUrl = extractImageUrl(
+                (res.value as { data?: unknown[] })?.data?.[0],
+                "qwen/qwen-image-2-1"
+              );
+              if (imgUrl) images.push(imgUrl);
+            } else {
+              console.warn("Qwen task failed:", res.reason);
+            }
           }
-        } catch (err: any) {
-          console.warn("Qwen Space ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("Qwen Space ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -365,15 +402,16 @@ export async function POST(req: NextRequest) {
             adapter_conditioning_factor: 0.8,
           });
 
-          const gallery = (result as any)?.data?.[0];
+          const gallery = (result as { data?: unknown[] })?.data?.[0];
           if (Array.isArray(gallery)) {
             for (const item of gallery) {
               const u = extractImageUrl(item, "tencentarc/photomaker-v2");
               if (u) images.push(u);
             }
           }
-        } catch (err: any) {
-          console.warn("PhotoMaker V2 Space ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("PhotoMaker V2 Space ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -405,12 +443,13 @@ export async function POST(req: NextRequest) {
             destinationFaceIndex: 1,
           });
 
-          const swappedUrl = extractImageUrl((swapResult as any)?.data?.[0], "dentro/face-swap");
+          const swappedUrl = extractImageUrl((swapResult as { data?: unknown[] })?.data?.[0], "dentro/face-swap");
           if (swappedUrl) {
             images.push(swappedUrl);
           }
-        } catch (err: any) {
-          console.warn("Dentro/face-swap error -> Fallback auf FLUX Generation", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("Dentro/face-swap error -> Fallback auf FLUX Generation", msg);
         }
 
         if (images.length === 0) {
@@ -453,9 +492,9 @@ export async function POST(req: NextRequest) {
       dsgvoCompliant: true,
       cachedInRamOnly: true,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Pipeline Fehler in /api/generate:", error);
-    const msg = error?.message || "Fehler beim KI-Rendering";
+    const msg = error instanceof Error ? error.message : "Fehler beim KI-Rendering";
 
     return NextResponse.json(
       { error: msg, isZeroGpuError: false },

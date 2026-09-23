@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Copy,
   Check,
-  Maximize2,
   Trash2,
   Layers,
   Wand2,
@@ -342,6 +341,7 @@ const CURATED_SCENES: ScenePrompt[] = [
 
 export default function PhotoFakerStudio() {
   const [faceImage, setFaceImage] = useState<string | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string>("Alle");
   const [activeSceneInfo, setActiveSceneInfo] = useState<{
     category: string;
@@ -355,7 +355,18 @@ export default function PhotoFakerStudio() {
   );
   const [selectedModel, setSelectedModel] = useState<string>("pulid");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
-  const [freeGenerations, setFreeGenerations] = useState<number>(10);
+  const [freeGenerations, setFreeGenerations] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("photo_faker_quota");
+      if (stored !== null) {
+        const val = parseInt(stored, 10);
+        if (!isNaN(val)) return val;
+      } else {
+        localStorage.setItem("photo_faker_quota", "10");
+      }
+    }
+    return 10;
+  });
   const [aspectRatio, setAspectRatio] = useState<string>("4:5");
   const [batchSize, setBatchSize] = useState<number>(2);
   const [filmGrainEnabled, setFilmGrainEnabled] = useState<boolean>(false);
@@ -366,9 +377,19 @@ export default function PhotoFakerStudio() {
   const [copied, setCopied] = useState<boolean>(false);
   const [renderLatency, setRenderLatency] = useState<string>("3.2s");
   const [isDraggingSlider, setIsDraggingSlider] = useState<boolean>(false);
-  const [hfToken, setHfToken] = useState<string>("");
+  const [hfToken, setHfToken] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("photo_faker_hf_token") || "";
+    }
+    return "";
+  });
   const [isTokenModalOpen, setIsTokenModalOpen] = useState<boolean>(false);
-  const [tokenInput, setTokenInput] = useState<string>("");
+  const [tokenInput, setTokenInput] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("photo_faker_hf_token") || "";
+    }
+    return "";
+  });
   const [showTokenText, setShowTokenText] = useState<boolean>(false);
   const [renderError, setRenderError] = useState<{
     message: string;
@@ -382,25 +403,24 @@ export default function PhotoFakerStudio() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const splitContainerRef = useRef<HTMLDivElement>(null);
+  const animFrameRef = useRef<number | null>(null);
 
-  // Kontingent & Token aus LocalStorage laden
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("photo_faker_quota");
-      if (stored !== null) {
-        const val = parseInt(stored, 10);
-        if (!isNaN(val)) setFreeGenerations(val);
-      } else {
-        localStorage.setItem("photo_faker_quota", "10");
-      }
+    const el = splitContainerRef.current;
+    if (!el) return;
 
-      const storedToken = localStorage.getItem("photo_faker_hf_token");
-      if (storedToken) {
-        setHfToken(storedToken);
-        setTokenInput(storedToken);
+    const observer = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        setContainerWidth(entries[0].contentRect.width);
       }
-    }
-  }, []);
+    });
+
+    observer.observe(el);
+    setContainerWidth(el.clientWidth);
+
+    return () => observer.disconnect();
+  }, [faceImage, generatedImages.length]);
+
 
   const handleSaveToken = () => {
     const trimmed = tokenInput.trim();
@@ -428,7 +448,7 @@ export default function PhotoFakerStudio() {
         : CURATED_SCENES.filter((s) => s.shortCategory === categoryToUse || s.category === categoryToUse);
 
     if (pool.length === 0) return;
-    let nextIndex = Math.floor(Math.random() * pool.length);
+    const nextIndex = Math.floor(Math.random() * pool.length);
     const chosen = pool[nextIndex];
     setActiveSceneInfo({ category: chosen.category, title: chosen.title });
     setPrompt(chosen.prompt.replace(/\{face_reference\}/g, "a person"));
@@ -530,10 +550,11 @@ export default function PhotoFakerStudio() {
           isZeroGpu: Boolean(data.isZeroGpuError),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const errMsg = err instanceof Error ? err.message : "Server nicht erreichbar";
       setRenderError({
-        message: "Netzwerkfehler beim Rendern: " + (err?.message || "Server nicht erreichbar"),
+        message: "Netzwerkfehler beim Rendern: " + errMsg,
         isZeroGpu: false,
       });
     } finally {
@@ -542,15 +563,27 @@ export default function PhotoFakerStudio() {
   };
 
   // 1-Click Direktexport in iPhone Fotos / Web Share
+  const downloadFallback = (url: string) => {
+    const timeStamp = Date.now();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `photo-faker-${timeStamp}.jpg`;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleSaveToPhotos = async () => {
     const currentUrl = generatedImages[activeImageIndex];
     if (!currentUrl) return;
 
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
+        const timeStamp = Date.now();
         const response = await fetch(currentUrl);
         const blob = await response.blob();
-        const file = new File([blob], `photo-faker-${Date.now()}.jpg`, {
+        const file = new File([blob], `photo-faker-${timeStamp}.jpg`, {
           type: "image/jpeg",
         });
         await navigator.share({
@@ -559,22 +592,12 @@ export default function PhotoFakerStudio() {
           text: "Mit Photo Faker Studio generiert.",
         });
         return;
-      } catch (e) {
+      } catch {
         downloadFallback(currentUrl);
       }
     } else {
       downloadFallback(currentUrl);
     }
-  };
-
-  const downloadFallback = (url: string) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `photo-faker-${Date.now()}.jpg`;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   // In Zwischenablage kopieren
@@ -591,26 +614,45 @@ export default function PhotoFakerStudio() {
     }
   };
 
-  // Slider Mouse/Touch Dragging
+  // Performance Optimization: Throttle slider drag updates via requestAnimationFrame
+  // to synchronize React state updates with display refresh rate (~60-120fps)
+  // preventing main-thread blocking during rapid mouse/touch drag movements.
   const handleSliderMove = (clientX: number) => {
-    if (!splitContainerRef.current) return;
-    const rect = splitContainerRef.current.getBoundingClientRect();
-    let offsetX = clientX - rect.left;
-    if (offsetX < 0) offsetX = 0;
-    if (offsetX > rect.width) offsetX = rect.width;
-    const percentage = Math.round((offsetX / rect.width) * 100);
-    setSliderPosition(percentage);
+    if (!splitContainerRef.current || animFrameRef.current !== null) return;
+
+    animFrameRef.current = requestAnimationFrame(() => {
+      animFrameRef.current = null;
+      if (!splitContainerRef.current) return;
+      const rect = splitContainerRef.current.getBoundingClientRect();
+      let offsetX = clientX - rect.left;
+      if (offsetX < 0) offsetX = 0;
+      if (offsetX > rect.width) offsetX = rect.width;
+      const percentage = Math.round((offsetX / rect.width) * 100);
+      setSliderPosition(percentage);
+    });
   };
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (isDraggingSlider) handleSliderMove(e.clientX);
     };
-    const onMouseUp = () => setIsDraggingSlider(false);
+    const onMouseUp = () => {
+      setIsDraggingSlider(false);
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+    };
     const onTouchMove = (e: TouchEvent) => {
       if (isDraggingSlider && e.touches[0]) handleSliderMove(e.touches[0].clientX);
     };
-    const onTouchEnd = () => setIsDraggingSlider(false);
+    const onTouchEnd = () => {
+      setIsDraggingSlider(false);
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+    };
 
     if (isDraggingSlider) {
       window.addEventListener("mousemove", onMouseMove);
@@ -624,6 +666,10 @@ export default function PhotoFakerStudio() {
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
+      if (animFrameRef.current !== null) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
     };
   }, [isDraggingSlider]);
 
@@ -1111,6 +1157,7 @@ export default function PhotoFakerStudio() {
                     src={generatedImages[activeImageIndex]}
                     alt="Generiertes Porträt"
                     className="absolute inset-0 w-full h-full object-cover"
+                    decoding="async"
                   />
 
                   {/* Vorher-Original-Bild (geslicet mit Slider) */}
@@ -1124,11 +1171,10 @@ export default function PhotoFakerStudio() {
                         alt="Original Referenz"
                         className="absolute inset-0 w-full h-full object-cover max-w-none"
                         style={{
-                          width: splitContainerRef.current
-                            ? `${splitContainerRef.current.clientWidth}px`
-                            : "100%",
+                          width: containerWidth > 0 ? `${containerWidth}px` : "100%",
                           height: "100%",
                         }}
+                        decoding="async"
                       />
                       <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-zinc-200 border border-white/10">
                         ORIGINAL INPUT
@@ -1212,6 +1258,8 @@ export default function PhotoFakerStudio() {
                         src={imgUrl}
                         alt={`Variation ${idx + 1}`}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                       />
                       <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono text-white">
                         #{idx + 1}
