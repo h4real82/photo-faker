@@ -32,13 +32,15 @@ const PRODUCTION_CONFIG = {
   flux_guidance: 3.5,
 };
 
-function extractImageUrl(raw: any, spaceSlug: string): string {
+function extractImageUrl(raw: unknown, spaceSlug: string): string {
   if (!raw) return "";
   let url = "";
   if (typeof raw === "string") {
     url = raw;
-  } else if (typeof raw === "object") {
-    url = raw.url || raw.path || raw.image?.url || raw.image?.path || "";
+  } else if (typeof raw === "object" && raw !== null) {
+    const obj = raw as Record<string, unknown>;
+    const imgObj = obj.image as Record<string, unknown> | undefined;
+    url = (obj.url as string) || (obj.path as string) || (imgObj?.url as string) || (imgObj?.path as string) || "";
   }
   if (url.startsWith("/")) {
     url = `https://${spaceSlug.replace("/", "-").toLowerCase()}.hf.space${url}`;
@@ -135,9 +137,9 @@ export async function POST(req: NextRequest) {
     };
     const { width, height } = resolutionMap[aspectRatio] || resolutionMap["4:5"];
 
-    let images: string[] = [];
+    const images: string[] = [];
     let providerName = "";
-    let pipelinePasses = {
+    const pipelinePasses = {
       pass1: modelId,
       pass2: "native",
       pass3: "native",
@@ -173,15 +175,18 @@ export async function POST(req: NextRequest) {
                 max_sequence_length: PRODUCTION_CONFIG.pulid_max_sequence_length,
               });
 
-              const imgUrl = extractImageUrl((result as any)?.data?.[0], "yanze/pulid-flux");
+              const resData = (result as { data?: unknown[] })?.data?.[0];
+              const imgUrl = extractImageUrl(resData, "yanze/pulid-flux");
               if (imgUrl) images.push(imgUrl);
-            } catch (err: any) {
-              console.warn(`PuLID-FLUX Iteration ${i + 1} fehlgeschlagen:`, err?.message);
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.warn(`PuLID-FLUX Iteration ${i + 1} fehlgeschlagen:`, msg);
               if (images.length > 0) break;
             }
           }
-        } catch (err: any) {
-          console.warn("PuLID-FLUX Space nicht erreichbar/ausgelastet -> Fallback auf FLUX High-Quality Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("PuLID-FLUX Space nicht erreichbar/ausgelastet -> Fallback auf FLUX High-Quality Engine", msg);
         }
 
         if (images.length === 0) {
@@ -223,15 +228,18 @@ export async function POST(req: NextRequest) {
                 enhance_face_region: true,
               });
 
-              const imgUrl = extractImageUrl((result as any)?.data?.[0], "instantx/instantid");
+              const resData = (result as { data?: unknown[] })?.data?.[0];
+              const imgUrl = extractImageUrl(resData, "instantx/instantid");
               if (imgUrl) images.push(imgUrl);
-            } catch (err: any) {
-              console.warn(`InstantID Iteration ${i + 1} fehlgeschlagen:`, err?.message);
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : String(err);
+              console.warn(`InstantID Iteration ${i + 1} fehlgeschlagen:`, msg);
               if (images.length > 0) break;
             }
           }
-        } catch (err: any) {
-          console.warn("InstantID Space nicht erreichbar/ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("InstantID Space nicht erreichbar/ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -263,14 +271,16 @@ export async function POST(req: NextRequest) {
               num_inference_steps: PRODUCTION_CONFIG.flux_steps,
             });
 
+            const resData = (result as { data?: unknown[] })?.data?.[0];
             const imgUrl = extractImageUrl(
-              (result as any)?.data?.[0],
+              resData,
               "black-forest-labs/flux-1-dev"
             );
             if (imgUrl) images.push(imgUrl);
           }
-        } catch (err: any) {
-          console.warn("FLUX Dev Space ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("FLUX Dev Space ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -302,14 +312,16 @@ export async function POST(req: NextRequest) {
               negative_prompt: MANDATORY_NEGATIVE_PROMPT,
             });
 
+            const resData = (result as { data?: unknown[] })?.data?.[0];
             const imgUrl = extractImageUrl(
-              (result as any)?.data?.[0],
+              resData,
               "qwen/qwen-image-2-1"
             );
             if (imgUrl) images.push(imgUrl);
           }
-        } catch (err: any) {
-          console.warn("Qwen Space ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("Qwen Space ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -365,15 +377,16 @@ export async function POST(req: NextRequest) {
             adapter_conditioning_factor: 0.8,
           });
 
-          const gallery = (result as any)?.data?.[0];
+          const gallery = (result as { data?: unknown[] })?.data?.[0];
           if (Array.isArray(gallery)) {
             for (const item of gallery) {
               const u = extractImageUrl(item, "tencentarc/photomaker-v2");
               if (u) images.push(u);
             }
           }
-        } catch (err: any) {
-          console.warn("PhotoMaker V2 Space ausgelastet -> Fallback Engine", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("PhotoMaker V2 Space ausgelastet -> Fallback Engine", msg);
         }
 
         if (images.length === 0) {
@@ -405,12 +418,14 @@ export async function POST(req: NextRequest) {
             destinationFaceIndex: 1,
           });
 
-          const swappedUrl = extractImageUrl((swapResult as any)?.data?.[0], "dentro/face-swap");
+          const resData = (swapResult as { data?: unknown[] })?.data?.[0];
+          const swappedUrl = extractImageUrl(resData, "dentro/face-swap");
           if (swappedUrl) {
             images.push(swappedUrl);
           }
-        } catch (err: any) {
-          console.warn("Dentro/face-swap error -> Fallback auf FLUX Generation", err?.message);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("Dentro/face-swap error -> Fallback auf FLUX Generation", msg);
         }
 
         if (images.length === 0) {
@@ -453,9 +468,9 @@ export async function POST(req: NextRequest) {
       dsgvoCompliant: true,
       cachedInRamOnly: true,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Pipeline Fehler in /api/generate:", error);
-    const msg = error?.message || "Fehler beim KI-Rendering";
+    const msg = error instanceof Error ? error.message : "Fehler beim KI-Rendering";
 
     return NextResponse.json(
       { error: msg, isZeroGpuError: false },
