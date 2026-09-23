@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Copy,
   Check,
-  Maximize2,
   Trash2,
   Layers,
   Wand2,
@@ -366,6 +365,7 @@ export default function PhotoFakerStudio() {
   const [copied, setCopied] = useState<boolean>(false);
   const [renderLatency, setRenderLatency] = useState<string>("3.2s");
   const [isDraggingSlider, setIsDraggingSlider] = useState<boolean>(false);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const [hfToken, setHfToken] = useState<string>("");
   const [isTokenModalOpen, setIsTokenModalOpen] = useState<boolean>(false);
   const [tokenInput, setTokenInput] = useState<string>("");
@@ -373,11 +373,6 @@ export default function PhotoFakerStudio() {
   const [renderError, setRenderError] = useState<{
     message: string;
     isZeroGpu: boolean;
-  } | null>(null);
-  const [pipelineInfo, setPipelineInfo] = useState<{
-    pass1: string;
-    pass2: string;
-    pass3: string;
   } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -389,15 +384,20 @@ export default function PhotoFakerStudio() {
       const stored = localStorage.getItem("photo_faker_quota");
       if (stored !== null) {
         const val = parseInt(stored, 10);
-        if (!isNaN(val)) setFreeGenerations(val);
+        if (!isNaN(val)) {
+          // Use microtask to avoid synchronous setState inside effect lint rule
+          queueMicrotask(() => setFreeGenerations(val));
+        }
       } else {
         localStorage.setItem("photo_faker_quota", "10");
       }
 
       const storedToken = localStorage.getItem("photo_faker_hf_token");
       if (storedToken) {
-        setHfToken(storedToken);
-        setTokenInput(storedToken);
+        queueMicrotask(() => {
+          setHfToken(storedToken);
+          setTokenInput(storedToken);
+        });
       }
     }
   }, []);
@@ -428,7 +428,7 @@ export default function PhotoFakerStudio() {
         : CURATED_SCENES.filter((s) => s.shortCategory === categoryToUse || s.category === categoryToUse);
 
     if (pool.length === 0) return;
-    let nextIndex = Math.floor(Math.random() * pool.length);
+    const nextIndex = Math.floor(Math.random() * pool.length);
     const chosen = pool[nextIndex];
     setActiveSceneInfo({ category: chosen.category, title: chosen.title });
     setPrompt(chosen.prompt.replace(/\{face_reference\}/g, "a person"));
@@ -482,7 +482,6 @@ export default function PhotoFakerStudio() {
     });
 
     setRenderError(null);
-    setPipelineInfo(null);
     setIsRendering(true);
     try {
       const response = await fetch("/api/generate", {
@@ -514,9 +513,6 @@ export default function PhotoFakerStudio() {
         if (data.latency) {
           setRenderLatency(data.latency);
         }
-        if (data.pipeline) {
-          setPipelineInfo(data.pipeline);
-        }
         // Celebration Confetti
         confetti({
           particleCount: 80,
@@ -530,16 +526,29 @@ export default function PhotoFakerStudio() {
           isZeroGpu: Boolean(data.isZeroGpuError),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const errMsg = err instanceof Error ? err.message : "Server nicht erreichbar";
       setRenderError({
-        message: "Netzwerkfehler beim Rendern: " + (err?.message || "Server nicht erreichbar"),
+        message: "Netzwerkfehler beim Rendern: " + errMsg,
         isZeroGpu: false,
       });
     } finally {
       setIsRendering(false);
     }
   };
+
+  // Container-Breite messen für Split-Slider (ohne Ref-Zugriff während Render)
+  useEffect(() => {
+    const updateWidth = () => {
+      if (splitContainerRef.current) {
+        setContainerWidth(splitContainerRef.current.clientWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [generatedImages, faceImage]);
 
   // 1-Click Direktexport in iPhone Fotos / Web Share
   const handleSaveToPhotos = async () => {
@@ -550,7 +559,7 @@ export default function PhotoFakerStudio() {
       try {
         const response = await fetch(currentUrl);
         const blob = await response.blob();
-        const file = new File([blob], `photo-faker-${Date.now()}.jpg`, {
+        const file = new File([blob], `photo-faker-render.jpg`, {
           type: "image/jpeg",
         });
         await navigator.share({
@@ -559,7 +568,7 @@ export default function PhotoFakerStudio() {
           text: "Mit Photo Faker Studio generiert.",
         });
         return;
-      } catch (e) {
+      } catch {
         downloadFallback(currentUrl);
       }
     } else {
@@ -792,6 +801,7 @@ export default function PhotoFakerStudio() {
                     }}
                     className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600/80 text-white transition"
                     title="Foto entfernen"
+                    aria-label="Foto entfernen"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -844,6 +854,9 @@ export default function PhotoFakerStudio() {
             <div className="relative">
               <button
                 type="button"
+                aria-expanded={isModelDropdownOpen}
+                aria-haspopup="listbox"
+                aria-label="KI-Modell auswählen"
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                 className="w-full p-3 rounded-xl bg-[#121317] border border-[#2d2e35] hover:border-violet-500/60 shadow-md flex items-center justify-between transition group text-left cursor-pointer"
               >
@@ -927,6 +940,8 @@ export default function PhotoFakerStudio() {
 
             <button
               type="button"
+              aria-pressed={filmGrainEnabled}
+              aria-label="Analog 35mm Grain Effekt umschalten"
               onClick={() => setFilmGrainEnabled(!filmGrainEnabled)}
               className={`w-full p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
                 filmGrainEnabled
@@ -975,6 +990,9 @@ export default function PhotoFakerStudio() {
               ].map((fmt) => (
                 <button
                   key={fmt.label}
+                  type="button"
+                  aria-pressed={aspectRatio === fmt.label}
+                  aria-label={`Seitenverhältnis ${fmt.label} (${fmt.sub})`}
                   onClick={() => setAspectRatio(fmt.label)}
                   className={`py-2 px-1 rounded-xl text-center transition ${
                     aspectRatio === fmt.label
@@ -994,6 +1012,9 @@ export default function PhotoFakerStudio() {
                 {[1, 2, 4].map((size) => (
                   <button
                     key={size}
+                    type="button"
+                    aria-pressed={batchSize === size}
+                    aria-label={`Batch-Größe ${size} ${size === 1 ? "Bild" : "Bilder"}`}
                     onClick={() => setBatchSize(size)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                       batchSize === size
@@ -1042,6 +1063,7 @@ export default function PhotoFakerStudio() {
                   <button
                     onClick={() => setRenderError(null)}
                     className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-red-900/40 transition"
+                    aria-label="Fehlermeldung schließen"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1124,9 +1146,7 @@ export default function PhotoFakerStudio() {
                         alt="Original Referenz"
                         className="absolute inset-0 w-full h-full object-cover max-w-none"
                         style={{
-                          width: splitContainerRef.current
-                            ? `${splitContainerRef.current.clientWidth}px`
-                            : "100%",
+                          width: containerWidth ? `${containerWidth}px` : "100%",
                           height: "100%",
                         }}
                       />
@@ -1144,9 +1164,22 @@ export default function PhotoFakerStudio() {
                   {/* Split Handle */}
                   {faceImage && (
                     <div
+                      role="slider"
+                      tabIndex={0}
+                      aria-label="Vorher-Nachher Vergleichs-Slider"
+                      aria-valuenow={sliderPosition}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowLeft") {
+                          setSliderPosition((prev) => Math.max(0, prev - 5));
+                        } else if (e.key === "ArrowRight") {
+                          setSliderPosition((prev) => Math.min(100, prev + 5));
+                        }
+                      }}
                       onMouseDown={() => setIsDraggingSlider(true)}
                       onTouchStart={() => setIsDraggingSlider(true)}
-                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group"
+                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded-full"
                       style={{ left: `${sliderPosition}%` }}
                     >
                       <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.8)] border-2 border-white group-hover:scale-110 transition">
@@ -1281,6 +1314,8 @@ export default function PhotoFakerStudio() {
                 <button
                   key={cat}
                   type="button"
+                  aria-pressed={selectedCategory === cat}
+                  aria-label={`Kategorie ${cat}`}
                   onClick={() => {
                     setSelectedCategory(cat);
                     handleRandomPrompt(cat);
@@ -1313,6 +1348,8 @@ export default function PhotoFakerStudio() {
 
             <div className="relative">
               <textarea
+                id="prompt-input"
+                aria-label="Szene und Bildbeschreibung (Prompt)"
                 rows={4}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -1390,6 +1427,7 @@ export default function PhotoFakerStudio() {
               <button
                 onClick={() => setIsTokenModalOpen(false)}
                 className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-[#22232d] transition"
+                aria-label="Dialog schließen"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1430,9 +1468,10 @@ export default function PhotoFakerStudio() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-300">Dein Hugging Face Token</label>
+              <label htmlFor="hf-token-input" className="text-xs font-semibold text-zinc-300">Dein Hugging Face Token</label>
               <div className="relative">
                 <input
+                  id="hf-token-input"
                   type={showTokenText ? "text" : "password"}
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
@@ -1443,6 +1482,7 @@ export default function PhotoFakerStudio() {
                   type="button"
                   onClick={() => setShowTokenText(!showTokenText)}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
+                  aria-label={showTokenText ? "Token ausblenden" : "Token anzeigen"}
                 >
                   {showTokenText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
