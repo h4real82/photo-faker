@@ -790,7 +790,8 @@ export default function PhotoFakerStudio() {
                       e.stopPropagation();
                       setFaceImage(null);
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600/80 text-white transition"
+                    aria-label="Foto entfernen"
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600/80 text-white transition focus-visible:ring-2 focus-visible:ring-red-400"
                     title="Foto entfernen"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -844,6 +845,8 @@ export default function PhotoFakerStudio() {
             <div className="relative">
               <button
                 type="button"
+                aria-expanded={isModelDropdownOpen}
+                aria-haspopup="listbox"
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                 className="w-full p-3 rounded-xl bg-[#121317] border border-[#2d2e35] hover:border-violet-500/60 shadow-md flex items-center justify-between transition group text-left cursor-pointer"
               >
@@ -927,6 +930,7 @@ export default function PhotoFakerStudio() {
 
             <button
               type="button"
+              aria-pressed={filmGrainEnabled}
               onClick={() => setFilmGrainEnabled(!filmGrainEnabled)}
               className={`w-full p-3 rounded-xl border text-left transition flex items-center justify-between cursor-pointer ${
                 filmGrainEnabled
@@ -975,6 +979,7 @@ export default function PhotoFakerStudio() {
               ].map((fmt) => (
                 <button
                   key={fmt.label}
+                  aria-pressed={aspectRatio === fmt.label}
                   onClick={() => setAspectRatio(fmt.label)}
                   className={`py-2 px-1 rounded-xl text-center transition ${
                     aspectRatio === fmt.label
@@ -994,6 +999,7 @@ export default function PhotoFakerStudio() {
                 {[1, 2, 4].map((size) => (
                   <button
                     key={size}
+                    aria-pressed={batchSize === size}
                     onClick={() => setBatchSize(size)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
                       batchSize === size
@@ -1041,6 +1047,7 @@ export default function PhotoFakerStudio() {
                   </div>
                   <button
                     onClick={() => setRenderError(null)}
+                    aria-label="Fehlermeldung schließen"
                     className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-red-900/40 transition"
                   >
                     <X className="w-4 h-4" />
@@ -1144,9 +1151,30 @@ export default function PhotoFakerStudio() {
                   {/* Split Handle */}
                   {faceImage && (
                     <div
+                      role="slider"
+                      aria-label="Vorher-Nachher-Vergleich"
+                      aria-valuenow={sliderPosition}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                          e.preventDefault();
+                          setSliderPosition((prev) => Math.max(0, prev - 5));
+                        } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                          e.preventDefault();
+                          setSliderPosition((prev) => Math.min(100, prev + 5));
+                        } else if (e.key === "Home") {
+                          e.preventDefault();
+                          setSliderPosition(0);
+                        } else if (e.key === "End") {
+                          e.preventDefault();
+                          setSliderPosition(100);
+                        }
+                      }}
                       onMouseDown={() => setIsDraggingSlider(true)}
                       onTouchStart={() => setIsDraggingSlider(true)}
-                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group"
+                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded-full"
                       style={{ left: `${sliderPosition}%` }}
                     >
                       <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.8)] border-2 border-white group-hover:scale-110 transition">
@@ -1201,8 +1229,18 @@ export default function PhotoFakerStudio() {
                   {generatedImages.map((imgUrl, idx) => (
                     <div
                       key={idx}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setActiveImageIndex(idx)}
-                      className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer transition border-2 ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setActiveImageIndex(idx);
+                        }
+                      }}
+                      aria-label={`Variation ${idx + 1} auswählen`}
+                      aria-pressed={activeImageIndex === idx}
+                      className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer transition border-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 ${
                         activeImageIndex === idx
                           ? "border-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.5)] scale-[1.02]"
                           : "border-transparent opacity-70 hover:opacity-100"
@@ -1281,6 +1319,7 @@ export default function PhotoFakerStudio() {
                 <button
                   key={cat}
                   type="button"
+                  aria-pressed={selectedCategory === cat}
                   onClick={() => {
                     setSelectedCategory(cat);
                     handleRandomPrompt(cat);
@@ -1389,6 +1428,7 @@ export default function PhotoFakerStudio() {
               </div>
               <button
                 onClick={() => setIsTokenModalOpen(false)}
+                aria-label="Dialog schließen"
                 className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-[#22232d] transition"
               >
                 <X className="w-5 h-5" />
@@ -1442,6 +1482,7 @@ export default function PhotoFakerStudio() {
                 <button
                   type="button"
                   onClick={() => setShowTokenText(!showTokenText)}
+                  aria-label={showTokenText ? "Token verbergen" : "Token anzeigen"}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
                 >
                   {showTokenText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
