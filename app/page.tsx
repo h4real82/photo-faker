@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import confetti from "canvas-confetti";
 import {
   Camera,
@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Copy,
   Check,
-  Maximize2,
   Trash2,
   Layers,
   Wand2,
@@ -355,7 +354,16 @@ export default function PhotoFakerStudio() {
   );
   const [selectedModel, setSelectedModel] = useState<string>("pulid");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState<boolean>(false);
-  const [freeGenerations, setFreeGenerations] = useState<number>(10);
+  const [freeGenerations, setFreeGenerations] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("photo_faker_quota");
+      if (stored !== null) {
+        const val = parseInt(stored, 10);
+        if (!isNaN(val)) return val;
+      }
+    }
+    return 10;
+  });
   const [aspectRatio, setAspectRatio] = useState<string>("4:5");
   const [batchSize, setBatchSize] = useState<number>(2);
   const [filmGrainEnabled, setFilmGrainEnabled] = useState<boolean>(false);
@@ -366,38 +374,33 @@ export default function PhotoFakerStudio() {
   const [copied, setCopied] = useState<boolean>(false);
   const [renderLatency, setRenderLatency] = useState<string>("3.2s");
   const [isDraggingSlider, setIsDraggingSlider] = useState<boolean>(false);
-  const [hfToken, setHfToken] = useState<string>("");
+  const [hfToken, setHfToken] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("photo_faker_hf_token") || "";
+    }
+    return "";
+  });
   const [isTokenModalOpen, setIsTokenModalOpen] = useState<boolean>(false);
-  const [tokenInput, setTokenInput] = useState<string>("");
+  const [tokenInput, setTokenInput] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("photo_faker_hf_token") || "";
+    }
+    return "";
+  });
   const [showTokenText, setShowTokenText] = useState<boolean>(false);
   const [renderError, setRenderError] = useState<{
     message: string;
     isZeroGpu: boolean;
   } | null>(null);
-  const [pipelineInfo, setPipelineInfo] = useState<{
-    pass1: string;
-    pass2: string;
-    pass3: string;
-  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const splitContainerRef = useRef<HTMLDivElement>(null);
 
-  // Kontingent & Token aus LocalStorage laden
+  // Initialize LocalStorage defaults if absent
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("photo_faker_quota");
-      if (stored !== null) {
-        const val = parseInt(stored, 10);
-        if (!isNaN(val)) setFreeGenerations(val);
-      } else {
+      if (localStorage.getItem("photo_faker_quota") === null) {
         localStorage.setItem("photo_faker_quota", "10");
-      }
-
-      const storedToken = localStorage.getItem("photo_faker_hf_token");
-      if (storedToken) {
-        setHfToken(storedToken);
-        setTokenInput(storedToken);
       }
     }
   }, []);
@@ -419,20 +422,30 @@ export default function PhotoFakerStudio() {
     setIsTokenModalOpen(false);
   };
 
+  // Cache scenes pool per category to avoid re-filtering on every render
+  const filteredScenePool = useMemo(() => {
+    if (selectedCategory === "Alle") return CURATED_SCENES;
+    return CURATED_SCENES.filter(
+      (s) => s.shortCategory === selectedCategory || s.category === selectedCategory
+    );
+  }, [selectedCategory]);
+
   // Zufällige realistische Szene auswählen
-  const handleRandomPrompt = (cat?: string) => {
+  const handleRandomPrompt = useCallback((cat?: string) => {
     const categoryToUse = cat || selectedCategory;
     const pool =
-      categoryToUse === "Alle"
+      categoryToUse === selectedCategory
+        ? filteredScenePool
+        : categoryToUse === "Alle"
         ? CURATED_SCENES
         : CURATED_SCENES.filter((s) => s.shortCategory === categoryToUse || s.category === categoryToUse);
 
     if (pool.length === 0) return;
-    let nextIndex = Math.floor(Math.random() * pool.length);
+    const nextIndex = Math.floor(Math.random() * pool.length);
     const chosen = pool[nextIndex];
     setActiveSceneInfo({ category: chosen.category, title: chosen.title });
     setPrompt(chosen.prompt.replace(/\{face_reference\}/g, "a person"));
-  };
+  }, [selectedCategory, filteredScenePool]);
 
   // File Upload Handler
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,7 +495,6 @@ export default function PhotoFakerStudio() {
     });
 
     setRenderError(null);
-    setPipelineInfo(null);
     setIsRendering(true);
     try {
       const response = await fetch("/api/generate", {
@@ -514,9 +526,6 @@ export default function PhotoFakerStudio() {
         if (data.latency) {
           setRenderLatency(data.latency);
         }
-        if (data.pipeline) {
-          setPipelineInfo(data.pipeline);
-        }
         // Celebration Confetti
         confetti({
           particleCount: 80,
@@ -530,16 +539,28 @@ export default function PhotoFakerStudio() {
           isZeroGpu: Boolean(data.isZeroGpuError),
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
+      const errMsg = err instanceof Error ? err.message : "Server nicht erreichbar";
       setRenderError({
-        message: "Netzwerkfehler beim Rendern: " + (err?.message || "Server nicht erreichbar"),
+        message: "Netzwerkfehler beim Rendern: " + errMsg,
         isZeroGpu: false,
       });
     } finally {
       setIsRendering(false);
     }
   };
+
+  const downloadFallback = useCallback((url: string) => {
+    const filename = `photo-faker-${Date.now()}.jpg`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, []);
 
   // 1-Click Direktexport in iPhone Fotos / Web Share
   const handleSaveToPhotos = async () => {
@@ -550,7 +571,8 @@ export default function PhotoFakerStudio() {
       try {
         const response = await fetch(currentUrl);
         const blob = await response.blob();
-        const file = new File([blob], `photo-faker-${Date.now()}.jpg`, {
+        const filename = `photo-faker-${Date.now()}.jpg`;
+        const file = new File([blob], filename, {
           type: "image/jpeg",
         });
         await navigator.share({
@@ -559,22 +581,12 @@ export default function PhotoFakerStudio() {
           text: "Mit Photo Faker Studio generiert.",
         });
         return;
-      } catch (e) {
+      } catch {
         downloadFallback(currentUrl);
       }
     } else {
       downloadFallback(currentUrl);
     }
-  };
-
-  const downloadFallback = (url: string) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `photo-faker-${Date.now()}.jpg`;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   // In Zwischenablage kopieren
@@ -1085,7 +1097,7 @@ export default function PhotoFakerStudio() {
             {/* Haupt-Canvas mit Split-Screen */}
             <div
               ref={splitContainerRef}
-              className="relative w-full aspect-[4/5] max-h-[580px] bg-[#16171d] rounded-2xl overflow-hidden border border-[#2d2e35] shadow-2xl mx-auto flex items-center justify-center select-none"
+              className="@container relative w-full aspect-[4/5] max-h-[580px] bg-[#16171d] rounded-2xl overflow-hidden border border-[#2d2e35] shadow-2xl mx-auto flex items-center justify-center select-none"
             >
               {isRendering ? (
                 <div className="flex flex-col items-center gap-3 p-6 text-center max-w-md">
@@ -1122,13 +1134,7 @@ export default function PhotoFakerStudio() {
                       <img
                         src={faceImage}
                         alt="Original Referenz"
-                        className="absolute inset-0 w-full h-full object-cover max-w-none"
-                        style={{
-                          width: splitContainerRef.current
-                            ? `${splitContainerRef.current.clientWidth}px`
-                            : "100%",
-                          height: "100%",
-                        }}
+                        className="absolute inset-y-0 left-0 h-full w-[100cqw] object-cover max-w-none"
                       />
                       <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-mono text-zinc-200 border border-white/10">
                         ORIGINAL INPUT
