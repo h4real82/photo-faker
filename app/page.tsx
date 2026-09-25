@@ -681,7 +681,7 @@ export default function PhotoFakerStudio() {
               setTokenInput(hfToken);
               setIsTokenModalOpen(true);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition cursor-pointer shadow-sm ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition cursor-pointer shadow-sm focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
               hfToken
                 ? "bg-emerald-950/60 text-emerald-300 border-emerald-700/50 hover:bg-emerald-900/60"
                 : "bg-[#1b1c24] text-zinc-300 border-[#2e303b] hover:text-white hover:border-violet-500/50"
@@ -697,7 +697,7 @@ export default function PhotoFakerStudio() {
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 text-xs bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition px-4 py-2 rounded-full font-semibold shadow-lg shadow-violet-600/30 active:scale-[0.98]"
+            className="flex items-center gap-1.5 text-xs bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 transition px-4 py-2 rounded-full font-semibold shadow-lg shadow-violet-600/30 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
           >
             <Camera className="w-3.5 h-3.5" />
             <span>{faceImage ? "Foto wechseln" : "Foto wählen"}</span>
@@ -790,7 +790,8 @@ export default function PhotoFakerStudio() {
                       e.stopPropagation();
                       setFaceImage(null);
                     }}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600/80 text-white transition"
+                    aria-label="Referenzgesicht entfernen"
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 hover:bg-red-600/80 text-white transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
                     title="Foto entfernen"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -845,7 +846,10 @@ export default function PhotoFakerStudio() {
               <button
                 type="button"
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                className="w-full p-3 rounded-xl bg-[#121317] border border-[#2d2e35] hover:border-violet-500/60 shadow-md flex items-center justify-between transition group text-left cursor-pointer"
+                aria-expanded={isModelDropdownOpen}
+                aria-haspopup="listbox"
+                aria-label="KI-Modell auswählen"
+                className="w-full p-3 rounded-xl bg-[#121317] border border-[#2d2e35] hover:border-violet-500/60 shadow-md flex items-center justify-between transition group text-left cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
               >
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -872,13 +876,14 @@ export default function PhotoFakerStudio() {
               {isModelDropdownOpen && (
                 <div className="absolute top-full left-0 right-0 mt-1 z-40 bg-[#16171d] border border-[#2d2e35] rounded-xl shadow-2xl overflow-hidden divide-y divide-[#22232d] animate-in fade-in zoom-in-95 duration-150">
                   {AI_MODELS.map((m) => (
-                    <div
+                    <button
+                      type="button"
                       key={m.id}
                       onClick={() => {
                         setSelectedModel(m.id);
                         setIsModelDropdownOpen(false);
                       }}
-                      className={`p-3 cursor-pointer transition flex items-center justify-between ${
+                      className={`w-full text-left p-3 cursor-pointer transition flex items-center justify-between focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none ${
                         selectedModel === m.id
                           ? "bg-violet-950/40 text-white"
                           : "hover:bg-[#1f2029] text-zinc-300"
@@ -899,7 +904,7 @@ export default function PhotoFakerStudio() {
                           <Check className="w-3.5 h-3.5 text-violet-400" />
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -1041,7 +1046,8 @@ export default function PhotoFakerStudio() {
                   </div>
                   <button
                     onClick={() => setRenderError(null)}
-                    className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-red-900/40 transition"
+                    aria-label="Fehlermeldung schließen"
+                    className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-red-900/40 transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1144,9 +1150,30 @@ export default function PhotoFakerStudio() {
                   {/* Split Handle */}
                   {faceImage && (
                     <div
+                      role="slider"
+                      tabIndex={0}
+                      aria-label="Vorher-Nachher Vergleichsslider"
+                      aria-valuenow={sliderPosition}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      onKeyDown={(e) => {
+                        if (e.key === "ArrowLeft") {
+                          e.preventDefault();
+                          setSliderPosition((prev) => Math.max(0, prev - 5));
+                        } else if (e.key === "ArrowRight") {
+                          e.preventDefault();
+                          setSliderPosition((prev) => Math.min(100, prev + 5));
+                        } else if (e.key === "Home") {
+                          e.preventDefault();
+                          setSliderPosition(0);
+                        } else if (e.key === "End") {
+                          e.preventDefault();
+                          setSliderPosition(100);
+                        }
+                      }}
                       onMouseDown={() => setIsDraggingSlider(true)}
                       onTouchStart={() => setIsDraggingSlider(true)}
-                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group"
+                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none rounded-full"
                       style={{ left: `${sliderPosition}%` }}
                     >
                       <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.8)] border-2 border-white group-hover:scale-110 transition">
@@ -1267,7 +1294,7 @@ export default function PhotoFakerStudio() {
               <button
                 type="button"
                 onClick={() => handleRandomPrompt()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 hover:text-white border border-violet-500/40 text-xs font-semibold transition active:scale-95 group shadow-sm cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 hover:text-white border border-violet-500/40 text-xs font-semibold transition active:scale-95 group shadow-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
                 title="Zufällige Szene aus Pool wählen"
               >
                 <Dices className="w-4 h-4 text-amber-300 group-hover:rotate-180 transition-transform duration-300" />
@@ -1317,7 +1344,8 @@ export default function PhotoFakerStudio() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Beschreibe die gewünschte Szene, Kleidung, Beleuchtung und Kameraeinstellung..."
-                className="w-full bg-[#101116] border border-[#2d2e35] focus:border-violet-500 rounded-xl p-3.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-violet-500 transition resize-none leading-relaxed"
+                aria-label="Szenenbeschreibung und Prompt"
+                className="w-full bg-[#101116] border border-[#2d2e35] focus:border-violet-500 rounded-xl p-3.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 transition resize-none leading-relaxed"
               />
             </div>
 
@@ -1337,7 +1365,7 @@ export default function PhotoFakerStudio() {
             <button
               onClick={handleRender}
               disabled={isRendering}
-              className="w-full py-4 px-6 rounded-2xl font-bold tracking-wide flex items-center justify-center gap-2.5 transition text-sm md:text-base shadow-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-500 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-violet-600/30 active:scale-[0.99]"
+              className="w-full py-4 px-6 rounded-2xl font-bold tracking-wide flex items-center justify-center gap-2.5 transition text-sm md:text-base shadow-xl bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-500 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-violet-600/30 active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
             >
               {isRendering ? (
                 <>
@@ -1389,7 +1417,8 @@ export default function PhotoFakerStudio() {
               </div>
               <button
                 onClick={() => setIsTokenModalOpen(false)}
-                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-[#22232d] transition"
+                aria-label="Modal schließen"
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-[#22232d] transition focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1442,7 +1471,8 @@ export default function PhotoFakerStudio() {
                 <button
                   type="button"
                   onClick={() => setShowTokenText(!showTokenText)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
+                  aria-label={showTokenText ? "Token verbergen" : "Token anzeigen"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1 focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:outline-none rounded-lg"
                 >
                   {showTokenText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
