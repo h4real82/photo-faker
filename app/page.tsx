@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Copy,
   Check,
-  Maximize2,
   Trash2,
   Layers,
   Wand2,
@@ -340,6 +339,16 @@ const CURATED_SCENES: ScenePrompt[] = [
   },
 ];
 
+function downloadFallback(url: string) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `photo-faker-${Date.now()}.jpg`;
+  a.target = "_blank";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 export default function PhotoFakerStudio() {
   const [faceImage, setFaceImage] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("Alle");
@@ -374,31 +383,50 @@ export default function PhotoFakerStudio() {
     message: string;
     isZeroGpu: boolean;
   } | null>(null);
-  const [pipelineInfo, setPipelineInfo] = useState<{
+  const [, setPipelineInfo] = useState<{
     pass1: string;
     pass2: string;
     pass3: string;
   } | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const splitContainerRef = useRef<HTMLDivElement>(null);
 
+  // ResizeObserver for tracking split container width without DOM reflows during render
+  useEffect(() => {
+    const el = splitContainerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect) {
+          setContainerWidth(entry.contentRect.width);
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Kontingent & Token aus LocalStorage laden
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("photo_faker_quota");
-      if (stored !== null) {
-        const val = parseInt(stored, 10);
-        if (!isNaN(val)) setFreeGenerations(val);
-      } else {
-        localStorage.setItem("photo_faker_quota", "10");
+    const stored = localStorage.getItem("photo_faker_quota");
+    if (stored !== null) {
+      const val = parseInt(stored, 10);
+      if (!isNaN(val)) {
+        queueMicrotask(() => setFreeGenerations(val));
       }
+    } else {
+      localStorage.setItem("photo_faker_quota", "10");
+    }
 
-      const storedToken = localStorage.getItem("photo_faker_hf_token");
-      if (storedToken) {
+    const storedToken = localStorage.getItem("photo_faker_hf_token");
+    if (storedToken) {
+      queueMicrotask(() => {
         setHfToken(storedToken);
         setTokenInput(storedToken);
-      }
+      });
     }
   }, []);
 
@@ -428,7 +456,7 @@ export default function PhotoFakerStudio() {
         : CURATED_SCENES.filter((s) => s.shortCategory === categoryToUse || s.category === categoryToUse);
 
     if (pool.length === 0) return;
-    let nextIndex = Math.floor(Math.random() * pool.length);
+    const nextIndex = Math.floor(Math.random() * pool.length);
     const chosen = pool[nextIndex];
     setActiveSceneInfo({ category: chosen.category, title: chosen.title });
     setPrompt(chosen.prompt.replace(/\{face_reference\}/g, "a person"));
@@ -530,10 +558,11 @@ export default function PhotoFakerStudio() {
           isZeroGpu: Boolean(data.isZeroGpuError),
         });
       }
-    } catch (err: any) {
-      console.error(err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Server nicht erreichbar";
+      console.error("Render error:", err);
       setRenderError({
-        message: "Netzwerkfehler beim Rendern: " + (err?.message || "Server nicht erreichbar"),
+        message: "Netzwerkfehler beim Rendern: " + msg,
         isZeroGpu: false,
       });
     } finally {
@@ -550,7 +579,7 @@ export default function PhotoFakerStudio() {
       try {
         const response = await fetch(currentUrl);
         const blob = await response.blob();
-        const file = new File([blob], `photo-faker-${Date.now()}.jpg`, {
+        const file = new File([blob], "photo-faker-render.jpg", {
           type: "image/jpeg",
         });
         await navigator.share({
@@ -559,22 +588,12 @@ export default function PhotoFakerStudio() {
           text: "Mit Photo Faker Studio generiert.",
         });
         return;
-      } catch (e) {
+      } catch {
         downloadFallback(currentUrl);
       }
     } else {
       downloadFallback(currentUrl);
     }
-  };
-
-  const downloadFallback = (url: string) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `photo-faker-${Date.now()}.jpg`;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
 
   // In Zwischenablage kopieren
@@ -586,7 +605,7 @@ export default function PhotoFakerStudio() {
       await navigator.clipboard.writeText(currentUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Kopieren fehlgeschlagen:", e);
     }
   };
@@ -1124,9 +1143,7 @@ export default function PhotoFakerStudio() {
                         alt="Original Referenz"
                         className="absolute inset-0 w-full h-full object-cover max-w-none"
                         style={{
-                          width: splitContainerRef.current
-                            ? `${splitContainerRef.current.clientWidth}px`
-                            : "100%",
+                          width: containerWidth ? `${containerWidth}px` : "100%",
                           height: "100%",
                         }}
                       />
