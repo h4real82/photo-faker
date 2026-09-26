@@ -591,6 +591,23 @@ export default function PhotoFakerStudio() {
     }
   };
 
+  // Slider Keyboard Navigation
+  const handleSliderKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+      e.preventDefault();
+      setSliderPosition((prev) => Math.max(0, prev - 5));
+    } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setSliderPosition((prev) => Math.min(100, prev + 5));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      setSliderPosition(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      setSliderPosition(100);
+    }
+  };
+
   // Slider Mouse/Touch Dragging
   const handleSliderMove = (clientX: number) => {
     if (!splitContainerRef.current) return;
@@ -1144,12 +1161,20 @@ export default function PhotoFakerStudio() {
                   {/* Split Handle */}
                   {faceImage && (
                     <div
+                      role="slider"
+                      tabIndex={0}
+                      aria-label="Vorher-Nachher Bildvergleich"
+                      aria-valuenow={sliderPosition}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuetext={`${sliderPosition}% Original, ${100 - sliderPosition}% KI Render`}
+                      onKeyDown={handleSliderKeyDown}
                       onMouseDown={() => setIsDraggingSlider(true)}
                       onTouchStart={() => setIsDraggingSlider(true)}
-                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group"
+                      className="absolute inset-y-0 -ml-4 w-8 cursor-ew-resize z-30 flex items-center justify-center group focus:outline-none"
                       style={{ left: `${sliderPosition}%` }}
                     >
-                      <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.8)] border-2 border-white group-hover:scale-110 transition">
+                      <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.8)] border-2 border-white group-hover:scale-110 group-focus-visible:ring-4 group-focus-visible:ring-violet-400 transition">
                         <Sliders className="w-3.5 h-3.5 rotate-90" />
                       </div>
                     </div>

@@ -1,0 +1,3 @@
+## 2025-05-18 - Interactive Image Comparison Slider Accessibility
+**Learning:** Split image comparison components (before/after viewfinders) often rely purely on mouse/touch drag events, rendering them inaccessible to screen readers and keyboard-only users. Adding ARIA slider roles (`role="slider"`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-valuetext`) along with `ArrowLeft`/`ArrowRight`/`Home`/`End` keyboard handler and `focus-visible` styling makes visual comparison interactive and fully accessible.
+**Action:** Always provide keyboard navigation and ARIA slider semantics for drag-based comparison controls.
